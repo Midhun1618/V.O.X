@@ -5,64 +5,79 @@ import pyttsx3
 import numpy as np
 import speech_recognition as sr
 import time
-import threading
 
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 
 engine = pyttsx3.init()
-recognizer = sr.Recognizer()
+r = sr.Recognizer()
 
 volume_mode = False
-confirming = False
-last_y = None
 idle_start = None
+current_volume = 0.5  # Start with 50% volume
 
-# Dummy volume setter (replace with actual system volume control)
-def set_volume(level):
-    print(f"Setting volume to {level}%")
 
-# Record and recognize speech
+def speak(text):
+    print("Vox:", text)
+    engine.say(text)
+    engine.runAndWait()
 
-def recognize_speech():
-    with sr.Microphone() as source:
-        print("Listening...")
-        audio = recognizer.listen(source)
-        try:
-            text = recognizer.recognize_google(audio)
-            print("You said:", text)
-            return text.lower()
-        except sr.UnknownValueError:
-            print("Could not understand audio")
-            return ""
-        except sr.RequestError:
-            print("Request error")
-            return ""
-
-# Gesture: Pointing + Middle fingers up (tip_y < pip_y for both)
-def wake_gesture(hand_landmarks):
-    index_up = hand_landmarks.landmark[8].y < hand_landmarks.landmark[6].y
-    middle_up = hand_landmarks.landmark[12].y < hand_landmarks.landmark[10].y
-    return index_up and middle_up
-
-# Gesture: Only Index finger up
-
-def index_gesture(hand_landmarks):
-    index_up = hand_landmarks.landmark[8].y < hand_landmarks.landmark[6].y
-    other_down = hand_landmarks.landmark[12].y > hand_landmarks.landmark[10].y  # Middle
-    return index_up and other_down
 
 def record_audio(duration=5, fs=16000):
+    print("Recording...")
     recording = sd.rec(int(duration * fs), samplerate=fs, channels=1)
     sd.wait()
     return recording
 
+
+def recognize_speech():
+    with sr.Microphone() as source:
+        print("Listening...")
+        audio = r.listen(source)
+        try:
+            command = r.recognize_google(audio)
+            print("Recognized:", command)
+            return command.lower()
+        except sr.UnknownValueError:
+            print("Could not understand.")
+        except sr.RequestError:
+            print("Could not request results.")
+    return ""
+
+
+def fingers_touching(hand1, hand2):
+    x1, y1 = hand1.landmark[8].x, hand1.landmark[8].y
+    x2, y2 = hand2.landmark[8].x, hand2.landmark[8].y
+    distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+    return distance < 0.05
+
+
+def draw_finger_connection(frame, hand1, hand2):
+    h, w, _ = frame.shape
+    x1, y1 = int(hand1.landmark[8].x * w), int(hand1.landmark[8].y * h)
+    x2, y2 = int(hand2.landmark[8].x * w), int(hand2.landmark[8].y * h)
+    cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 255), 3)
+
+
+def volume_gesture_condition(hand_landmarks):
+    return True
+
+
+def draw_volume_circle(frame, x, y, volume):
+    cv2.circle(frame, (x, y), 15, (0, 255, 0), -1)
+    cv2.putText(frame, f"Volume: {int(volume * 100)}%", (x + 20, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+
 def main():
-    global volume_mode, confirming, last_y, idle_start
+    global volume_mode, idle_start, current_volume
 
     cap = cv2.VideoCapture(0)
-    with mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7, min_tracking_confidence=0.7) as hands:
-        print("Waiting for wake gesture (Index + Middle finger up)...")
+    with mp_hands.Hands(
+        max_num_hands=2,
+        min_detection_confidence=0.7,
+        min_tracking_confidence=0.7) as hands:
+
+        print("Touch both index fingertips to wake up Vox.")
 
         while True:
             ret, frame = cap.read()
@@ -73,65 +88,25 @@ def main():
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             result = hands.process(rgb_frame)
 
-            if result.multi_hand_landmarks:
-                for hand_landmarks in result.multi_hand_landmarks:
-                    mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            if result.multi_hand_landmarks and len(result.multi_hand_landmarks) == 2:
+                hand1, hand2 = result.multi_hand_landmarks
+                mp_drawing.draw_landmarks(frame, hand1, mp_hands.HAND_CONNECTIONS)
+                mp_drawing.draw_landmarks(frame, hand2, mp_hands.HAND_CONNECTIONS)
 
-                    if not volume_mode and wake_gesture(hand_landmarks):
-                        print("Wake gesture detected!")
-                        engine.say("Vox here")
-                        engine.runAndWait()
-                        record_audio()
-                        command = recognize_speech()
+                draw_finger_connection(frame, hand1, hand2)
 
-                        if "control the volume" in command:
-                            print("Volume control mode ON")
-                            volume_mode = True
-                            engine.say("Show index finger to set volume")
-                            engine.runAndWait()
+                h, w, _ = frame.shape
+                x = int(hand1.landmark[8].x * w)
+                y = int(hand1.landmark[8].y * h)
 
-                    if volume_mode and index_gesture(hand_landmarks):
-                        y = hand_landmarks.landmark[8].y
-                        height, _ = frame.shape[:2]
-                        volume_level = int((1 - y) * 100)
-                        print(f"Volume Level: {volume_level}%")
-
-                        if last_y is not None and abs(y - last_y) < 0.01:
-                            if idle_start is None:
-                                idle_start = time.time()
-                            elif time.time() - idle_start > 1.5 and not confirming:
-                                engine.say("Can I confirm this level?")
-                                engine.runAndWait()
-                                confirming = True
-                                threading.Thread(target=confirm_volume, args=(volume_level,)).start()
-                        else:
-                            idle_start = None
-                            confirming = False
-
-                        last_y = y
-                    else:
-                        idle_start = None
-                        last_y = None
-
-            cv2.imshow("VOX - Hand Gesture Volume Control", frame)
+       
+            cv2.imshow("VOX Assistant", frame)
             if cv2.waitKey(1) & 0xFF == 27:
                 break
 
     cap.release()
     cv2.destroyAllWindows()
 
-def confirm_volume(level):
-    global volume_mode, confirming
-    response = recognize_speech()
-    if "yes" in response:
-        engine.say("Volume confirmed")
-        engine.runAndWait()
-        set_volume(level)
-        volume_mode = False
-    else:
-        engine.say("Okay, adjust again")
-        engine.runAndWait()
-        confirming = False
 
 if __name__ == "__main__":
     main()
