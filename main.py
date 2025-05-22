@@ -9,13 +9,18 @@ import pyaudio
 import struct
 import os
 import pygame
+import webbrowser
+import urllib.parse
+import subprocess
+import random
+
 
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-ACCESS_KEY = "l4YcMaXwFVLjkElTdruR5vz2fjZ3Vwd0CuGnfDR/lg0ifYd/iQzgmA=="  # Replace this with your actual Porcupine access key
-KEYWORD_PATH = os.path.join("assets", "vox.ppn")  # Your wake word model path
+ACCESS_KEY = "l4YcMaXwFVLjkElTdruR5vz2fjZ3Vwd0CuGnfDR/lg0ifYd/iQzgmA=="
+KEYWORD_PATH = os.path.join("assets", "vox.ppn")
 
 class VoxWidget(ctk.CTk):
     def __init__(self):
@@ -48,7 +53,7 @@ class VoxWidget(ctk.CTk):
         self.canvas.pack(pady=(10, 5))
         self.draw_glow_circle()
 
-        self.transcript_label = ctk.CTkLabel(self.main_frame, text="Waiting for wake word 'VOX'...", font=ctk.CTkFont(size=14, weight="bold"))
+        self.transcript_label = ctk.CTkLabel(self.main_frame, text="vox", font=ctk.CTkFont(size=14, weight="bold"))
         self.transcript_label.pack(pady=(5, 0))
 
         self.bind("<Button-3>", lambda e: sys.exit())
@@ -112,9 +117,9 @@ class VoxWidget(ctk.CTk):
                 result = self.porcupine.process(pcm_unpacked)
                 if result >= 0 and not self.listening_for_command:
                     # Wake word detected
+                    pygame.mixer.music.load("waketone.wav")
                     self.listening_for_command = True
                     self.after(0, self.update_transcript, "Wake word detected! Listening for command...")
-                    pygame.mixer.music.load("waketone.wav")  # or "waketone.wav"
                     pygame.mixer.music.play()
                     self.glow_listen(True)
                     self.listen_for_command()  # blocking call but okay in thread
@@ -130,6 +135,48 @@ class VoxWidget(ctk.CTk):
                 audio = self.recognizer.listen(source, timeout=5, phrase_time_limit=5)
                 text = self.recognizer.recognize_google(audio)
                 self.after(0, self.update_transcript, text)
+                search_context=""
+                command = text.lower()
+                if "notepad" and "open" in command:
+                    subprocess.Popen("notepad.exe")
+                if "camera" and "open" in command:
+                    subprocess.Popen("camera.exe")
+                if "youtube" and "open" in command:
+                    webbrowser.open("https://youtu.be/")
+                if "spotify" and "open" in command:
+                    webbrowser.open("https://open.spotify.com/")      
+                elif "open youtube" and "search" in command:
+                    command_arr = command.split(" ")
+                    pos = command_arr.index("search")
+                    for i in range(pos+1,len(command_arr)):
+                        search_context +=command_arr[i]+" "
+                    search_context = search_context.strip()
+                    encoded_query = urllib.parse.quote(search_context)  
+                    url = f"https://www.youtube.com/results?search_query={encoded_query}"
+                    webbrowser.open(url)
+                elif "activate coding mode" in command:
+                    launch_vscode()
+                    webbrowser.open("https://youtu.be/LVbUNRwpXzw?si=dp_7ajWR_qgWqf3S")
+                    webbrowser.open("https://www.github.com/")
+        
+                else:
+                    print("App not recognized!")
+
+                def launch_vscode():
+                    if shutil.which("code"):
+                        subprocess.Popen(["code"])
+                        return
+
+                    local_path = os.path.expandvars(r"%LocalAppData%\Programs\Microsoft VS Code\Code.exe")
+                    program_files_path = r"C:\Program Files\Microsoft VS Code\Code.exe"
+
+                    if os.path.exists(local_path):
+                        subprocess.Popen([local_path])
+                    elif os.path.exists(program_files_path):
+                        subprocess.Popen([program_files_path])
+                    else:
+                        print("VS Code not found! Please add it to your PATH or install it.")
+
                 self.tts_engine.say(text)
                 self.tts_engine.runAndWait()
             except sr.UnknownValueError:
@@ -141,7 +188,6 @@ class VoxWidget(ctk.CTk):
 
     def update_transcript(self, text):
         print(text)
-        self.transcript_label.configure(text=text)
 
 if __name__ == "__main__":
     app = VoxWidget()
