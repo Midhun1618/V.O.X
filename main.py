@@ -137,14 +137,19 @@ class VoxWidget(ctk.CTk):
                 self.after(0, self.update_transcript, text)
                 search_context=""
                 command = text.lower()
-                if "notepad" and "open" in command:
+                if "open notepad" in command:
                     subprocess.Popen("notepad.exe")
-                if "camera" and "open" in command:
+                elif "open camera" in command:
                     subprocess.Popen("camera.exe")
-                if "youtube" and "open" in command:
+                elif "open youtube" in command:
                     webbrowser.open("https://youtu.be/")
-                if "spotify" and "open" in command:
-                    webbrowser.open("https://open.spotify.com/")      
+                elif "blush mode" in command:
+                    rom=['https://youtu.be/4q5o3Tiwcmc?si=PKMgk9gBWgZ1YV3-','https://youtu.be/2NrpwkyoTrI?si=44LmN2OoKUJpNZx_','https://youtu.be/LRHSq0tTLB0?si=4DeYQfS_29sU-Un6','https://youtu.be/SS4QdqgvFl0?si=PBB0DeCfyb6KgUQT']
+                    webbrowser.open(random.choice(rom))
+                elif "open spotify" in command:
+                    webbrowser.open("https://open.spotify.com/")    
+                elif "open mail" or "open email" in command:
+                    webbrowser.open("https://mail.google.com/mail/u/0/#inbox")   
                 elif "open youtube" and "search" in command:
                     command_arr = command.split(" ")
                     pos = command_arr.index("search")
@@ -155,27 +160,12 @@ class VoxWidget(ctk.CTk):
                     url = f"https://www.youtube.com/results?search_query={encoded_query}"
                     webbrowser.open(url)
                 elif "activate coding mode" in command:
-                    launch_vscode()
                     webbrowser.open("https://youtu.be/LVbUNRwpXzw?si=dp_7ajWR_qgWqf3S")
                     webbrowser.open("https://www.github.com/")
+                    webbrowser.open("https://chatgpt.com")
         
                 else:
                     print("App not recognized!")
-
-                def launch_vscode():
-                    if shutil.which("code"):
-                        subprocess.Popen(["code"])
-                        return
-
-                    local_path = os.path.expandvars(r"%LocalAppData%\Programs\Microsoft VS Code\Code.exe")
-                    program_files_path = r"C:\Program Files\Microsoft VS Code\Code.exe"
-
-                    if os.path.exists(local_path):
-                        subprocess.Popen([local_path])
-                    elif os.path.exists(program_files_path):
-                        subprocess.Popen([program_files_path])
-                    else:
-                        print("VS Code not found! Please add it to your PATH or install it.")
 
                 self.tts_engine.say(text)
                 self.tts_engine.runAndWait()
