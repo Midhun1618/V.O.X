@@ -8,8 +8,9 @@ import pvporcupine
 import pyaudio
 import struct
 import os
+import pygame
 
-# Initialize customtkinter appearance
+
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
@@ -19,6 +20,8 @@ KEYWORD_PATH = os.path.join("assets", "vox.ppn")  # Your wake word model path
 class VoxWidget(ctk.CTk):
     def __init__(self):
         super().__init__()
+
+        pygame.mixer.init()
 
         self.wm_attributes("-alpha", 0.7)  # 70% opacity
         self.overrideredirect(True)
@@ -111,6 +114,8 @@ class VoxWidget(ctk.CTk):
                     # Wake word detected
                     self.listening_for_command = True
                     self.after(0, self.update_transcript, "Wake word detected! Listening for command...")
+                    pygame.mixer.music.load("waketone.wav")  # or "waketone.wav"
+                    pygame.mixer.music.play()
                     self.glow_listen(True)
                     self.listen_for_command()  # blocking call but okay in thread
                     self.listening_for_command = False
