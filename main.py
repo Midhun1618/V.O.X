@@ -27,18 +27,16 @@ class VoxWidget(tk.Tk):
         super().__init__()
 
         pygame.mixer.init()
-        self.overrideredirect(True)  # Remove window frame for custom style
-        self.configure(bg="#000000")  # Transparent background key
-        self.wm_attributes("-transparentcolor", "#000000")  # Make black transparent
-        self.wm_attributes("-topmost", True)  # Always on top
+        self.overrideredirect(True)
+        self.configure(bg="#000000")
+        self.wm_attributes("-transparentcolor", "#000000")
+        self.wm_attributes("-topmost", True)
 
         self.tts_engine = pyttsx3.init()
 
-        # For dragging window
         self.bind("<Button-1>", self.start_move)
         self.bind("<B1-Motion>", self.move_window)
 
-        # Position and size the window near bottom right
         window_size = 65
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
@@ -46,36 +44,44 @@ class VoxWidget(tk.Tk):
         y = screen_height - window_size - 10
         self.geometry(f"{window_size}x{window_size}+{x}+{y}")
 
-        # Main frame and canvas for drawing glow circle
         self.main_frame = ctk.CTkFrame(self, corner_radius=15)
         self.main_frame.pack(fill="both", expand=True)
 
-        self.canvas = tk.Canvas(self.main_frame, width=window_size, height=window_size,bg="#2C2C2C", highlightthickness=0)
+        self.canvas = tk.Canvas(self.main_frame, width=window_size, height=window_size,bg="#1E1E1E", highlightthickness=0)
         self.canvas.pack(pady=(8, 8))
 
         self.draw_rounded_background()
         self.draw_glow_circle(active=False)
 
-        # Right click exits the app
         self.bind("<Button-3>", lambda e: sys.exit())
 
-        # Speech recognition setup
         self.recognizer = sr.Recognizer()
         self.microphone = sr.Microphone()
 
-        # Porcupine wake word initialization variables
         self.porcupine = None
         self.pa = None
         self.stream = None
         self.listening_for_command = False
 
-        # Start wake word listener in background thread
         self.porcupine_thread = threading.Thread(target=self.wake_word_listener, daemon=True)
         self.porcupine_thread.start()
 
     def draw_rounded_background(self):
-        self.canvas.delete("all")
-        self.canvas.create_rectangle(0, 0, self.canvas.winfo_width(), self.canvas.winfo_height(),outline="", fill="#1E1E1E", width=0)
+        width = self.canvas.winfo_width()
+        height = self.canvas.winfo_height()
+        radius = 25
+        bg_color = "#1E1E1E"
+
+        self.canvas.create_rectangle(0, 0, width, height, fill=bg_color, outline=bg_color)
+
+        self.canvas.create_oval(0, 0, radius*2, radius*2, fill=bg_color, outline=bg_color)
+        self.canvas.create_oval(width-radius*2, 0, width, radius*2, fill=bg_color, outline=bg_color)
+        self.canvas.create_oval(0, height-radius*2, radius*2, height, fill=bg_color, outline=bg_color)
+        self.canvas.create_oval(width-radius*2, height-radius*2, width, height, fill=bg_color, outline=bg_color)
+
+        # Optional: draw center rect to complete the middle part
+        self.canvas.create_rectangle(radius, 0, width - radius, height, fill=bg_color, outline=bg_color)
+        self.canvas.create_rectangle(0, radius, width, height - radius, fill=bg_color, outline=bg_color)
 
     def draw_glow_circle(self, active=False):
         self.canvas.delete("all")
@@ -83,14 +89,12 @@ class VoxWidget(tk.Tk):
         
         image_path = "assets/vox_icon_inactive.png" if not active else "assets/vox_icon_active.png"
         image = Image.open(image_path)
-        image = image.resize((50, 50), Image.Resampling.LANCZOS)
-        self.icon_image = ImageTk.PhotoImage(image)  # store reference to avoid garbage collection
+        image = image.resize((60, 60), Image.Resampling.LANCZOS)
+        self.icon_image = ImageTk.PhotoImage(image)
 
-        # Calculate center position properly
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
 
-        # Safety fallback if width/height is 1 (happens before first .update())
         if canvas_width <= 1 or canvas_height <= 1:
             canvas_width = 65
             canvas_height = 65
@@ -136,7 +140,7 @@ class VoxWidget(tk.Tk):
                     self.listening_for_command = True
                     self.after(0, self.update_transcript, "Wake word detected! Listening for command...")
                     self.glow_listen(True)
-                    self.listen_for_command()  # blocking but fine in thread
+                    self.listen_for_command()
                     self.listening_for_command = False
                     self.after(0, self.update_transcript, "Waiting for wake word 'VOX'...")
                     self.glow_listen(False)
@@ -201,7 +205,6 @@ class VoxWidget(tk.Tk):
                     print("Command not recognized!")
                     self.play_failure_sound()
 
-                # TTS feedback
                 self.tts_engine.say(text)
                 self.tts_engine.runAndWait()
 
