@@ -2,7 +2,6 @@ import customtkinter as ctk
 import speech_recognition as sr
 import threading
 import sys
-import time
 import pyttsx3
 import pvporcupine
 import pyaudio
@@ -13,64 +12,75 @@ import webbrowser
 import urllib.parse
 import subprocess
 import random
+import tkinter as tk
 
-
-
+# Set CTK appearance and theme
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
 ACCESS_KEY = "l4YcMaXwFVLjkElTdruR5vz2fjZ3Vwd0CuGnfDR/lg0ifYd/iQzgmA=="
 KEYWORD_PATH = os.path.join("assets", "vox.ppn")
 
-class VoxWidget(ctk.CTk):
+class VoxWidget(tk.Tk):
     def __init__(self):
         super().__init__()
 
         pygame.mixer.init()
+        self.overrideredirect(True)  # Remove window frame for custom style
+        self.configure(bg="#000000")  # Transparent background key
+        self.wm_attributes("-transparentcolor", "#000000")  # Make black transparent
+        self.wm_attributes("-topmost", True)  # Always on top
 
-        self.wm_attributes("-alpha", 0.7)  # 70% opacity
-        self.overrideredirect(True)
-        self.wm_attributes("-topmost", True)
         self.tts_engine = pyttsx3.init()
 
-        # Bind mouse events for dragging the window
+        # For dragging window
         self.bind("<Button-1>", self.start_move)
         self.bind("<B1-Motion>", self.move_window)
 
-        self.geometry("80x90")
+        # Position and size the window near bottom right
+        window_size = 65
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        window_width = 80
-        window_height = 90
-        x = screen_width - window_width - 10
-        y = (screen_height // 2) - (window_height // 2)
-        self.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        x = screen_width - window_size - 10
+        y = screen_height - window_size - 10
+        self.geometry(f"{window_size}x{window_size}+{x}+{y}")
 
+        # Main frame and canvas for drawing glow circle
         self.main_frame = ctk.CTkFrame(self, corner_radius=15)
         self.main_frame.pack(fill="both", expand=True)
 
-        self.canvas = ctk.CTkCanvas(self.main_frame, width=60, height=60, bg="#2C2C2C", highlightthickness=0)
-        self.canvas.pack(pady=(10, 5))
-        self.draw_glow_circle()
+        self.canvas = tk.Canvas(self.main_frame, width=window_size, height=window_size,bg="#2C2C2C", highlightthickness=0)
+        self.canvas.pack(pady=(8, 8))
 
-        self.transcript_label = ctk.CTkLabel(self.main_frame, text="vox", font=ctk.CTkFont(size=14, weight="bold"))
-        self.transcript_label.pack(pady=(5, 0))
+        self.draw_rounded_background()
+        self.draw_glow_circle(active=False)
 
+        # Right click exits the app
         self.bind("<Button-3>", lambda e: sys.exit())
 
-        # Speech recognizer setup
+        # Speech recognition setup
         self.recognizer = sr.Recognizer()
         self.microphone = sr.Microphone()
 
-        # Porcupine wake word stuff
+        # Porcupine wake word initialization variables
         self.porcupine = None
         self.pa = None
         self.stream = None
-        self.porcupine_thread = threading.Thread(target=self.wake_word_listener, daemon=True)
-        self.listening_for_command = False  # Flag to manage state
+        self.listening_for_command = False
 
-        # Start wake word detection thread
+        # Start wake word listener in background thread
+        self.porcupine_thread = threading.Thread(target=self.wake_word_listener, daemon=True)
         self.porcupine_thread.start()
+
+    def draw_rounded_background(self):
+        self.canvas.delete("all")
+        self.canvas.create_rectangle(0, 0, self.canvas.winfo_width(), self.canvas.winfo_height(),outline="", fill="#1E1E1E", width=0)
+
+    def draw_glow_circle(self, active=True):
+        # Clear previous glow
+        self.canvas.delete("glow")
+        color = "#00FFFF" if active else "#FFFFFF"
+        self.glow_circle = self.canvas.create_oval(5, 5, 50, 50, fill=color, outline="", tags="glow")
 
     def start_move(self, event):
         self.x = event.x
@@ -81,49 +91,9 @@ class VoxWidget(ctk.CTk):
         y = self.winfo_pointery() - self.y
         self.geometry(f"+{x}+{y}")
 
-        def draw_glow_circle(self, outer_color="#DFF9FF"):
-            self.canvas.delete("all")
-            self.outer_circles = []
-            self.outer_radii = [30, 25, 20, 15]
-            for radius in self.outer_radii:
-                oval = self.canvas.create_oval(
-                    30 - radius, 30 - radius,
-                    30 + radius, 30 + radius,
-                    fill=outer_color, outline=""
-                )
-                self.outer_circles.append(oval)
-            self.glow_circle = self.canvas.create_oval(5, 5, 55, 55, fill="#FFFFFF", outline="")
-
-        def glow_listen(self, active=True):
-            if active:
-                # Animate to bigger size and color shift
-                for i in range(3):
-                    for j, oval in enumerate(self.outer_circles):
-                        growth = 2  # make outer circle grow slightly
-                        self.canvas.coords(
-                            oval,
-                            30 - self.outer_radii[j] - growth,
-                            30 - self.outer_radii[j] - growth,
-                            30 + self.outer_radii[j] + growth,
-                            30 + self.outer_radii[j] + growth
-                        )
-                        self.canvas.itemconfig(oval, fill="#FFFFFF")
-                    self.canvas.itemconfig(self.glow_circle, fill="#00FFFF")  # Cyan
-                    self.update_idletasks()
-                    time.sleep(0.4)
-            else:
-                for j, oval in enumerate(self.outer_circles):
-                    self.canvas.coords(
-                        oval,
-                        30 - self.outer_radii[j],
-                        30 - self.outer_radii[j],
-                        30 + self.outer_radii[j],
-                        30 + self.outer_radii[j]
-                    )
-                    self.canvas.itemconfig(oval, fill="#DFF9FF")  # Muted cyan-white
-                self.canvas.itemconfig(self.glow_circle, fill="#FFFFFF")
-                self.update_idletasks()
-
+    def glow_listen(self, active=True):
+        self.draw_glow_circle(active)
+        self.update_idletasks()
 
     def wake_word_listener(self):
         try:
@@ -136,21 +106,20 @@ class VoxWidget(ctk.CTk):
                 input=True,
                 frames_per_buffer=self.porcupine.frame_length
             )
-
             while True:
                 pcm = self.stream.read(self.porcupine.frame_length, exception_on_overflow=False)
                 pcm_unpacked = struct.unpack_from("h" * self.porcupine.frame_length, pcm)
                 result = self.porcupine.process(pcm_unpacked)
                 if result >= 0 and not self.listening_for_command:
-                    # Wake word detected
                     pygame.mixer.music.load("waketone.wav")
+                    pygame.mixer.music.play()
                     self.listening_for_command = True
                     self.after(0, self.update_transcript, "Wake word detected! Listening for command...")
-                    pygame.mixer.music.play()
                     self.glow_listen(True)
-                    self.listen_for_command()  # blocking call but okay in thread
+                    self.listen_for_command()  # blocking but fine in thread
                     self.listening_for_command = False
                     self.after(0, self.update_transcript, "Waiting for wake word 'VOX'...")
+                    self.glow_listen(False)
         except Exception as e:
             print(f"Wake word error: {e}")
 
@@ -161,77 +130,84 @@ class VoxWidget(ctk.CTk):
                 audio = self.recognizer.listen(source, timeout=5, phrase_time_limit=5)
                 text = self.recognizer.recognize_google(audio)
                 self.after(0, self.update_transcript, text)
-                search_context=""
                 command = text.lower()
+                search_context = ""
+
                 if "open notepad" in command:
                     subprocess.Popen("notepad.exe")
-                    pygame.mixer.music.load("ontrue.wav")
-                    pygame.mixer.music.play()
+                    self.play_success_sound()
                 elif "open camera" in command:
                     subprocess.Popen("camera.exe")
-                    pygame.mixer.music.load("ontrue.wav")
-                    pygame.mixer.music.play()
+                    self.play_success_sound()
+                elif "open youtube" in command and "search" in command:
+                    # Extract search query after "search"
+                    parts = command.split()
+                    if "search" in parts:
+                        pos = parts.index("search")
+                        search_context = " ".join(parts[pos + 1:])
+                        encoded_query = urllib.parse.quote(search_context)
+                        url = f"https://www.youtube.com/results?search_query={encoded_query}"
+                        webbrowser.open(url)
+                        self.play_success_sound()
+                    else:
+                        # Just open YouTube homepage if no search word found (fallback)
+                        webbrowser.open("https://youtu.be/")
+                        self.play_success_sound()
                 elif "open youtube" in command:
                     webbrowser.open("https://youtu.be/")
-                    pygame.mixer.music.load("ontrue.wav")
-                    pygame.mixer.music.play()
+                    self.play_success_sound()
                 elif "blush mode" in command:
-                    rom=['https://youtu.be/4q5o3Tiwcmc?si=PKMgk9gBWgZ1YV3-','https://youtu.be/2NrpwkyoTrI?si=44LmN2OoKUJpNZx_','https://youtu.be/LRHSq0tTLB0?si=4DeYQfS_29sU-Un6','https://youtu.be/SS4QdqgvFl0?si=PBB0DeCfyb6KgUQT']
+                    rom = [
+                        'https://youtu.be/4q5o3Tiwcmc?si=PKMgk9gBWgZ1YV3-',
+                        'https://youtu.be/2NrpwkyoTrI?si=44LmN2OoKUJpNZx_',
+                        'https://youtu.be/LRHSq0tTLB0?si=4DeYQfS_29sU-Un6',
+                        'https://youtu.be/SS4QdqgvFl0?si=PBB0DeCfyb6KgUQT'
+                    ]
                     webbrowser.open(random.choice(rom))
-                    pygame.mixer.music.load("ontrue.wav")
-                    pygame.mixer.music.play()
+                    self.play_success_sound()
                 elif "open spotify" in command:
-                    webbrowser.open("https://open.spotify.com/")  
-                    pygame.mixer.music.load("ontrue.wav")
-                    pygame.mixer.music.play()  
+                    webbrowser.open("https://open.spotify.com/")
+                    self.play_success_sound()
                 elif "open mail" in command:
                     webbrowser.open("https://mail.google.com/mail/u/0/#inbox")
-                    pygame.mixer.music.load("ontrue.wav")
-                    pygame.mixer.music.play()
+                    self.play_success_sound()
                 elif "need assistance" in command:
                     webbrowser.open("https://chatgpt.com")
-                    pygame.mixer.music.load("ontrue.wav")
-                    pygame.mixer.music.play()    
-                elif "open youtube" and "search" in command:
-                    command_arr = command.split(" ")
-                    pos = command_arr.index("search")
-                    for i in range(pos+1,len(command_arr)):
-                        search_context +=command_arr[i]+" "
-                    search_context = search_context.strip()
-                    encoded_query = urllib.parse.quote(search_context)  
-                    url = f"https://www.youtube.com/results?search_query={encoded_query}"
-                    webbrowser.open(url)
-                    pygame.mixer.music.load("ontrue.wav")
-                    pygame.mixer.music.play()
+                    self.play_success_sound()
                 elif "activate coding mode" in command:
                     webbrowser.open("https://youtu.be/LVbUNRwpXzw?si=dp_7ajWR_qgWqf3S")
                     webbrowser.open("https://www.github.com/")
                     webbrowser.open("https://chatgpt.com")
-                    pygame.mixer.music.load("ontrue.wav")
-                    pygame.mixer.music.play()
-        
+                    self.play_success_sound()
                 else:
-                    print("App not recognized!")
-                    pygame.mixer.music.load("onfalse.wav")
-                    pygame.mixer.music.play()
+                    print("Command not recognized!")
+                    self.play_failure_sound()
 
+                # TTS feedback
                 self.tts_engine.say(text)
                 self.tts_engine.runAndWait()
+
             except sr.UnknownValueError:
                 self.after(0, self.update_transcript, "Could not understand audio")
-                pygame.mixer.music.load("onfalse.wav")
-                pygame.mixer.music.play()
+                self.play_failure_sound()
             except sr.RequestError:
                 self.after(0, self.update_transcript, "API Error")
-                pygame.mixer.music.load("onfalse.wav")
-                pygame.mixer.music.play()
+                self.play_failure_sound()
             except sr.WaitTimeoutError:
                 self.after(0, self.update_transcript, "Listening timed out")
-                pygame.mixer.music.load("onfalse.wav")
-                pygame.mixer.music.play()
+                self.play_failure_sound()
+
+    def play_success_sound(self):
+        pygame.mixer.music.load("ontrue.wav")
+        pygame.mixer.music.play()
+
+    def play_failure_sound(self):
+        pygame.mixer.music.load("onfalse.wav")
+        pygame.mixer.music.play()
 
     def update_transcript(self, text):
         print(text)
+
 
 if __name__ == "__main__":
     app = VoxWidget()
