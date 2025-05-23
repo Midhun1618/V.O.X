@@ -17,6 +17,8 @@ from PIL import Image, ImageTk
 import json
 import datetime
 import time
+import requests
+from datetime import datetime
 
 # Set CTK appearance and theme
 ctk.set_appearance_mode("dark")
@@ -73,7 +75,18 @@ class VoxWidget(tk.Tk):
         self.porcupine_thread = threading.Thread(target=self.wake_word_listener, daemon=True)
         self.porcupine_thread.start()
 
-
+    def get_current_time(self):
+        now = datetime.now()
+        return now.strftime("It's %I:%M %p")
+    
+    def get_weather(self): 
+        try:
+            response = requests.get("https://wttr.in/Kochi?format=3")
+            w_info=response.text
+            print(w_info[11:13] )
+            self.tts_engine.say(f"its around {w_info[11:13]} degree celcius now.")
+        except Exception as e:
+            print("Error:", e)
     def load_tasks(self):
         if os.path.exists("tasks.json"):
             with open("tasks.json", "r") as file:
@@ -141,7 +154,7 @@ class VoxWidget(tk.Tk):
     def check_reminders(self):
         while True:
             data = self.load_tasks()
-            now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            now = datetime.now().strftime("%Y-%m-%d %H:%M")
             for r in data["reminders"]:
                 if not r.get("notified") and r["time"] == now:
                     pygame.mixer.music.load("onalert.wav")
@@ -191,12 +204,25 @@ class VoxWidget(tk.Tk):
                 command = text.lower()
                 search_context = ""
 
+
                 if "open notepad" in command:
                     subprocess.Popen("notepad.exe")
-                    self.play_success_sound()
-                elif "open camera" in command:
-                    subprocess.Popen("camera.exe")
-                    self.play_success_sound()
+                    self.success_sfx()
+                    self.tts_engine.say("opening notepad")
+                elif "open settings" in command:
+                    os.system("start ms-settings:")
+                    self.tts_engine.say("Opening Windows system settings")
+                    self.success_sfx()
+                elif "what's the weather" in command or "weather" in command:
+                    weather_report = self.get_weather() 
+                    self.tts_engine.say(weather_report)
+                    self.success_sfx()
+
+                elif "what's the time" in command or "current time" in command:
+                    time_now = self.get_current_time()
+                    self.tts_engine.say(time_now)
+                    self.success_sfx()
+
                 elif "open youtube" in command and "search" in command:
                     parts = command.split()
                     if "search" in parts:
@@ -206,12 +232,14 @@ class VoxWidget(tk.Tk):
                         url = f"https://www.youtube.com/results?search_query={encoded_query}"
                         webbrowser.open(url)
                         self.success_sfx()
+                        self.tts_engine.say(f"Searching {encoded_query} in Youtube")
                     else:
                         webbrowser.open("https://youtu.be/")
                         self.success_sfx()
                 elif "open youtube" in command:
                     webbrowser.open("https://youtu.be/")
                     self.success_sfx()
+                    self.tts_engine.say("Opening Youtube")
                 elif "blush mode" in command:
                     rom = [
                         'https://youtu.be/4q5o3Tiwcmc?si=PKMgk9gBWgZ1YV3-',
@@ -224,17 +252,22 @@ class VoxWidget(tk.Tk):
                 elif "open spotify" in command:
                     webbrowser.open("https://open.spotify.com/")
                     self.success_sfx()
+                    self.tts_engine.say("Starting Spotify,enjoy your music session boss!")
                 elif "open mail" in command:
                     webbrowser.open("https://mail.google.com/mail/u/0/#inbox")
                     self.success_sfx()
+                    self.tts_engine.say("Opening gmail right now")
                 elif "need assistance" in command:
                     webbrowser.open("https://chatgpt.com")
                     self.success_sfx()
+                    self.tts_engine.say("Opening chat GPT for assistance.")
                 elif "activate coding mode" in command:
                     webbrowser.open("https://youtu.be/LVbUNRwpXzw?si=dp_7ajWR_qgWqf3S")
                     webbrowser.open("https://www.github.com/")
                     webbrowser.open("https://chatgpt.com")
                     self.success_sfx()
+                    self.tts_engine.say("Activating programming mode, initializing chat GPT,Github and Youtube")
+
                 elif "add task" in command:
                     task_text = command.replace("add task", "").strip()
                     data = self.load_tasks()
@@ -243,14 +276,7 @@ class VoxWidget(tk.Tk):
                     self.tts_engine.say(f"Task added: {task_text}")
                     self.tts_engine.runAndWait()
                     self.success_sfx()
-                elif "read my reminders" in command:
-                    data = self.load_tasks()
-                    reminders = data.get("reminders", [])
-                    if reminders:
-                        for reminder in reminders:
-                            self.tts_engine.say(f"Reminder: {reminder['reminder']} at {reminder['time']}")
-                    else:
-                        self.tts_engine.say("You have no reminders right now.")
+
                 elif "read my task" in command or "read my tasks" in command:
                     data = self.load_tasks()
                     tasks = data.get("tasks", [])
@@ -279,7 +305,7 @@ class VoxWidget(tk.Tk):
                     print("Command not recognized!")
                     self.failure_sfx()
 
-                self.tts_engine.say(text)
+        
                 self.tts_engine.runAndWait()
 
             except sr.UnknownValueError:
