@@ -1,0 +1,17 @@
+{
+    "tasks": [
+        "exam"
+    ],
+    "reminders": [
+        {
+            "text": "shopping",
+            "time": "2025-05-23 08:30",
+            "notified": false
+        },
+        {
+            "text": "exam",
+            "time": "2025-05-23 19:51",
+            "notified": false
+        }
+    ]
+}

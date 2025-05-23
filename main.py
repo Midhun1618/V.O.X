@@ -14,6 +14,9 @@ import subprocess
 import random
 import tkinter as tk
 from PIL import Image, ImageTk
+import json
+import datetime
+import time
 
 # Set CTK appearance and theme
 ctk.set_appearance_mode("dark")
@@ -36,6 +39,10 @@ class VoxWidget(tk.Tk):
 
         self.bind("<Button-1>", self.start_move)
         self.bind("<B1-Motion>", self.move_window)
+
+        self.reminder_thread = threading.Thread(target=self.check_reminders, daemon=True)
+        self.reminder_thread.start()
+
 
         window_size = 65
         screen_width = self.winfo_screenwidth()
@@ -65,6 +72,18 @@ class VoxWidget(tk.Tk):
 
         self.porcupine_thread = threading.Thread(target=self.wake_word_listener, daemon=True)
         self.porcupine_thread.start()
+
+
+    def load_tasks(self):
+        if os.path.exists("tasks.json"):
+            with open("tasks.json", "r") as file:
+                return json.load(file)
+        return {"tasks": [], "reminders": []}
+
+    def save_tasks(self,data):
+        with open("tasks.json", "w") as file:
+            json.dump(data, file, indent=4)
+
 
     def draw_rounded_background(self):
         width = self.canvas.winfo_width()
@@ -119,6 +138,21 @@ class VoxWidget(tk.Tk):
         self.draw_glow_circle(active)
         self.update_idletasks()
 
+    def check_reminders(self):
+        while True:
+            data = self.load_tasks()
+            now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            for r in data["reminders"]:
+                if not r.get("notified") and r["time"] == now:
+                    pygame.mixer.music.load("onalert.wav")
+                    pygame.mixer.music.play()
+                    self.tts_engine.say(f"Reminder: {r['text']}")
+                    self.tts_engine.runAndWait()
+                    r["notified"] = True
+                    self.save_tasks(data)
+            time.sleep(60)
+
+
     def wake_word_listener(self):
         try:
             self.porcupine = pvporcupine.create(access_key=ACCESS_KEY, keyword_paths=[KEYWORD_PATH])
@@ -171,13 +205,13 @@ class VoxWidget(tk.Tk):
                         encoded_query = urllib.parse.quote(search_context)
                         url = f"https://www.youtube.com/results?search_query={encoded_query}"
                         webbrowser.open(url)
-                        self.play_success_sound()
+                        self.success_sfx()
                     else:
                         webbrowser.open("https://youtu.be/")
-                        self.play_success_sound()
+                        self.success_sfx()
                 elif "open youtube" in command:
                     webbrowser.open("https://youtu.be/")
-                    self.play_success_sound()
+                    self.success_sfx()
                 elif "blush mode" in command:
                     rom = [
                         'https://youtu.be/4q5o3Tiwcmc?si=PKMgk9gBWgZ1YV3-',
@@ -186,44 +220,88 @@ class VoxWidget(tk.Tk):
                         'https://youtu.be/SS4QdqgvFl0?si=PBB0DeCfyb6KgUQT'
                     ]
                     webbrowser.open(random.choice(rom))
-                    self.play_success_sound()
+                    self.success_sfx()
                 elif "open spotify" in command:
                     webbrowser.open("https://open.spotify.com/")
-                    self.play_success_sound()
+                    self.success_sfx()
                 elif "open mail" in command:
                     webbrowser.open("https://mail.google.com/mail/u/0/#inbox")
-                    self.play_success_sound()
+                    self.success_sfx()
                 elif "need assistance" in command:
                     webbrowser.open("https://chatgpt.com")
-                    self.play_success_sound()
+                    self.success_sfx()
                 elif "activate coding mode" in command:
                     webbrowser.open("https://youtu.be/LVbUNRwpXzw?si=dp_7ajWR_qgWqf3S")
                     webbrowser.open("https://www.github.com/")
                     webbrowser.open("https://chatgpt.com")
-                    self.play_success_sound()
+                    self.success_sfx()
+                elif "add task" in command:
+                    task_text = command.replace("add task", "").strip()
+                    data = self.load_tasks()
+                    data["tasks"].append(task_text)
+                    self.save_tasks(data)
+                    self.tts_engine.say(f"Task added: {task_text}")
+                    self.tts_engine.runAndWait()
+                    self.success_sfx()
+                elif "read my reminders" in command:
+                    data = self.load_tasks()
+                    reminders = data.get("reminders", [])
+                    if reminders:
+                        for reminder in reminders:
+                            self.tts_engine.say(f"Reminder: {reminder['reminder']} at {reminder['time']}")
+                    else:
+                        self.tts_engine.say("You have no reminders right now.")
+                elif "read my task" in command or "read my tasks" in command:
+                    data = self.load_tasks()
+                    tasks = data.get("tasks", [])
+                    if tasks:
+                        self.tts_engine.say("Here are your tasks:")
+                        for task in tasks:
+                             self.tts_engine.say(task)
+                    else:
+                         self.tts_engine.say("You don't have any tasks right now.")
+
+
+                elif "read my reminders" in command:
+                    data = self.load_tasks()
+                    reminders = data.get("reminders", [])
+                    if reminders:
+                        for reminder in reminders:
+                            if isinstance(reminder, dict) and 'text' in reminder and 'time' in reminder:
+                                 self.tts_engine.say(f"Reminder: {reminder['text']} at {reminder['time']}")
+                            else:
+                                 self.tts_engine.say("I found a reminder, but it seems to be missing some info.")
+                    else:
+                        self.tts_engine.say("You have no reminders at the moment.")
+
+
                 else:
                     print("Command not recognized!")
-                    self.play_failure_sound()
+                    self.failure_sfx()
 
                 self.tts_engine.say(text)
                 self.tts_engine.runAndWait()
 
             except sr.UnknownValueError:
                 self.after(0, self.update_transcript, "Could not understand audio")
-                self.play_failure_sound()
+                self.failure_sfx()
             except sr.RequestError:
                 self.after(0, self.update_transcript, "API Error")
-                self.play_failure_sound()
+                self.failure_sfx()
             except sr.WaitTimeoutError:
                 self.after(0, self.update_transcript, "Listening timed out")
-                self.play_failure_sound()
+                self.failure_sfx()
 
-    def play_success_sound(self):
+    def success_sfx(self):
         pygame.mixer.music.load("ontrue.wav")
         pygame.mixer.music.play()
 
-    def play_failure_sound(self):
+    def failure_sfx(self):
         pygame.mixer.music.load("onfalse.wav")
+        pygame.mixer.music.play()
+
+    def alert_sfx(self):
+        pygame.mixer.music.load("onalert.wav")
         pygame.mixer.music.play()
 
     def update_transcript(self, text):
