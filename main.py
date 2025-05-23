@@ -13,6 +13,7 @@ import urllib.parse
 import subprocess
 import random
 import tkinter as tk
+from PIL import Image, ImageTk
 
 # Set CTK appearance and theme
 ctk.set_appearance_mode("dark")
@@ -76,11 +77,30 @@ class VoxWidget(tk.Tk):
         self.canvas.delete("all")
         self.canvas.create_rectangle(0, 0, self.canvas.winfo_width(), self.canvas.winfo_height(),outline="", fill="#1E1E1E", width=0)
 
-    def draw_glow_circle(self, active=True):
-        # Clear previous glow
-        self.canvas.delete("glow")
-        color = "#00FFFF" if active else "#FFFFFF"
-        self.glow_circle = self.canvas.create_oval(5, 5, 50, 50, fill=color, outline="", tags="glow")
+    def draw_glow_circle(self, active=False):
+        self.canvas.delete("all")
+        self.draw_rounded_background()
+        
+        image_path = "assets/vox_icon_inactive.png" if not active else "assets/vox_icon_active.png"
+        image = Image.open(image_path)
+        image = image.resize((50, 50), Image.Resampling.LANCZOS)
+        self.icon_image = ImageTk.PhotoImage(image)  # store reference to avoid garbage collection
+
+        # Calculate center position properly
+        canvas_width = self.canvas.winfo_width()
+        canvas_height = self.canvas.winfo_height()
+
+        # Safety fallback if width/height is 1 (happens before first .update())
+        if canvas_width <= 1 or canvas_height <= 1:
+            canvas_width = 65
+            canvas_height = 65
+
+        self.canvas.create_image(
+            canvas_width // 2,
+            canvas_height // 2,
+            image=self.icon_image
+        )
+
 
     def start_move(self, event):
         self.x = event.x
@@ -140,7 +160,6 @@ class VoxWidget(tk.Tk):
                     subprocess.Popen("camera.exe")
                     self.play_success_sound()
                 elif "open youtube" in command and "search" in command:
-                    # Extract search query after "search"
                     parts = command.split()
                     if "search" in parts:
                         pos = parts.index("search")
@@ -150,7 +169,6 @@ class VoxWidget(tk.Tk):
                         webbrowser.open(url)
                         self.play_success_sound()
                     else:
-                        # Just open YouTube homepage if no search word found (fallback)
                         webbrowser.open("https://youtu.be/")
                         self.play_success_sound()
                 elif "open youtube" in command:
