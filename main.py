@@ -20,9 +20,10 @@ import time
 import requests
 from datetime import datetime
 
-# Set CTK appearance and theme
+
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
+
 
 ACCESS_KEY = "l4YcMaXwFVLjkElTdruR5vz2fjZ3Vwd0CuGnfDR/lg0ifYd/iQzgmA=="
 KEYWORD_PATH = os.path.join("assets", "vox.ppn")
@@ -32,25 +33,29 @@ class VoxWidget(tk.Tk):
         super().__init__()
 
         pygame.mixer.init()
+        self.update_idletasks()
+
+
+
         self.overrideredirect(True)
-        self.configure(bg="#000000")
-        self.wm_attributes("-transparentcolor", "#000000")
-        self.wm_attributes("-topmost", True)
+        self.attributes("-topmost", True)
+        self.attributes("-transparentcolor", "white")
+        self.configure(bg="white")
+        self.attributes("-alpha", 0.7)
+
+
 
         self.tts_engine = pyttsx3.init()
 
         self.bind("<Button-1>", self.start_move)
         self.bind("<B1-Motion>", self.move_window)
 
-        self.reminder_thread = threading.Thread(target=self.check_reminders, daemon=True)
-        self.reminder_thread.start()
-
 
         window_size = 65
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         x = screen_width - window_size - 10
-        y = screen_height - window_size - 10
+        y = screen_height - window_size - 70
         self.geometry(f"{window_size}x{window_size}+{x}+{y}")
 
         self.main_frame = ctk.CTkFrame(self, corner_radius=15)
@@ -74,6 +79,9 @@ class VoxWidget(tk.Tk):
 
         self.porcupine_thread = threading.Thread(target=self.wake_word_listener, daemon=True)
         self.porcupine_thread.start()
+
+    def open_control_panel(self):
+        os.system("control")
 
     def get_current_time(self):
         now = datetime.now()
@@ -124,6 +132,7 @@ class VoxWidget(tk.Tk):
         image = image.resize((60, 60), Image.Resampling.LANCZOS)
         self.icon_image = ImageTk.PhotoImage(image)
 
+
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
 
@@ -150,21 +159,6 @@ class VoxWidget(tk.Tk):
     def glow_listen(self, active=True):
         self.draw_glow_circle(active)
         self.update_idletasks()
-
-    def check_reminders(self):
-        while True:
-            data = self.load_tasks()
-            now = datetime.now().strftime("%Y-%m-%d %H:%M")
-            for r in data["reminders"]:
-                if not r.get("notified") and r["time"] == now:
-                    pygame.mixer.music.load("onalert.wav")
-                    pygame.mixer.music.play()
-                    self.tts_engine.say(f"Reminder: {r['text']}")
-                    self.tts_engine.runAndWait()
-                    r["notified"] = True
-                    self.save_tasks(data)
-            time.sleep(60)
-
 
     def wake_word_listener(self):
         try:
@@ -209,6 +203,21 @@ class VoxWidget(tk.Tk):
                     subprocess.Popen("notepad.exe")
                     self.success_sfx()
                     self.tts_engine.say("opening notepad")
+                elif "open control panel" in command or "control panel" in command:
+                    self.open_control_panel()
+                    self.success_sfx()
+                    self.tts_engine.say("opening control panel")
+                elif "your creator" in command or "who are you" in command:
+                    self.success_sfx()
+                    self.tts_engine.say("I'm Vox")
+                    self.tts_engine.say("A virtual assistant developed by mithun")
+                elif "buddy" in command or "what's up" in command:
+                    self.success_sfx()
+                    self.tts_engine.say("How're you Boss? I am is alway here to assist you")
+                elif "sleep" in command or "hide" in command:
+                    os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
+                    self.success_sfx()
+                    self.tts_engine.say("opening control panel")
                 elif "open settings" in command:
                     os.system("start ms-settings:")
                     self.tts_engine.say("Opening Windows system settings")
@@ -232,7 +241,7 @@ class VoxWidget(tk.Tk):
                         url = f"https://www.youtube.com/results?search_query={encoded_query}"
                         webbrowser.open(url)
                         self.success_sfx()
-                        self.tts_engine.say(f"Searching {encoded_query} in Youtube")
+                        self.tts_engine.say(f"Searching {search_context} in Youtube")
                     else:
                         webbrowser.open("https://youtu.be/")
                         self.success_sfx()
@@ -252,7 +261,7 @@ class VoxWidget(tk.Tk):
                 elif "open spotify" in command:
                     webbrowser.open("https://open.spotify.com/")
                     self.success_sfx()
-                    self.tts_engine.say("Starting Spotify,enjoy your music session boss!")
+                    self.tts_engine.say("Starting Spotify")
                 elif "open mail" in command:
                     webbrowser.open("https://mail.google.com/mail/u/0/#inbox")
                     self.success_sfx()
@@ -266,7 +275,7 @@ class VoxWidget(tk.Tk):
                     webbrowser.open("https://www.github.com/")
                     webbrowser.open("https://chatgpt.com")
                     self.success_sfx()
-                    self.tts_engine.say("Activating programming mode, initializing chat GPT,Github and Youtube")
+                    self.tts_engine.say("Activating programming mode, initializing chat GPT,Git hub and Youtube")
 
                 elif "add task" in command:
                     task_text = command.replace("add task", "").strip()
@@ -276,6 +285,24 @@ class VoxWidget(tk.Tk):
                     self.tts_engine.say(f"Task added: {task_text}")
                     self.tts_engine.runAndWait()
                     self.success_sfx()
+                elif "task is done" in command:
+                    data = self.load_tasks()
+                    tasks = data.get("tasks", [])
+                    
+                    task_keyword = command.split("task is done")[0].strip()
+                    print(f"Task keyword detected: {task_keyword}")
+                    
+                    if task_keyword in tasks:
+                        tasks.remove(task_keyword)
+                        data["tasks"] = tasks
+                        
+                        self.save_tasks(data)
+                        
+                        self.tts_engine.say(f"Marking task '{task_keyword}' as done.")
+                        self.success_sfx()
+                    else:
+                        self.tts_engine.say(f"Can't find '{task_keyword}' in tasks")
+                        self.failure_sfx()
 
                 elif "read my task" in command or "read my tasks" in command:
                     data = self.load_tasks()
@@ -286,20 +313,6 @@ class VoxWidget(tk.Tk):
                              self.tts_engine.say(task)
                     else:
                          self.tts_engine.say("You don't have any tasks right now.")
-
-
-                elif "read my reminders" in command:
-                    data = self.load_tasks()
-                    reminders = data.get("reminders", [])
-                    if reminders:
-                        for reminder in reminders:
-                            if isinstance(reminder, dict) and 'text' in reminder and 'time' in reminder:
-                                 self.tts_engine.say(f"Reminder: {reminder['text']} at {reminder['time']}")
-                            else:
-                                 self.tts_engine.say("I found a reminder, but it seems to be missing some info.")
-                    else:
-                        self.tts_engine.say("You have no reminders at the moment.")
-
 
                 else:
                     print("Command not recognized!")
