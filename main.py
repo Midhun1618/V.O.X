@@ -25,7 +25,6 @@ import sounddevice as sd
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
-print(sd.query_devices())
 sd.default.device = (1, None)
 
 ACCESS_KEY = "l4YcMaXwFVLjkElTdruR5vz2fjZ3Vwd0CuGnfDR/lg0ifYd/iQzgmA=="
@@ -33,6 +32,9 @@ ACCESS_KEY = "l4YcMaXwFVLjkElTdruR5vz2fjZ3Vwd0CuGnfDR/lg0ifYd/iQzgmA=="
 class VoxWidget(tk.Tk):
     def __init__(self):
         super().__init__()
+        root = tk.Tk()
+        root.iconbitmap("assets/voxicon.ico")
+        root.withdraw()
 
         pygame.mixer.init()
         self.update_idletasks()
