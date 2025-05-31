@@ -20,6 +20,8 @@ import time
 import requests
 from datetime import datetime
 import sounddevice as sd
+import soundfile as sf
+import ctypes
 
 
 
@@ -32,9 +34,6 @@ ACCESS_KEY = "l4YcMaXwFVLjkElTdruR5vz2fjZ3Vwd0CuGnfDR/lg0ifYd/iQzgmA=="
 class VoxWidget(tk.Tk):
     def __init__(self):
         super().__init__()
-        root = tk.Tk()
-        root.iconbitmap("assets/voxicon.ico")
-        root.withdraw()
 
         pygame.mixer.init()
         self.update_idletasks()
@@ -278,6 +277,11 @@ class VoxWidget(tk.Tk):
                     webbrowser.open("https://chatgpt.com")
                     self.success_sfx()
                     self.tts_engine.say("Opening chat GPT for assistance.")
+                elif "mute" in command:
+                    VK_VOLUME_MUTE = 0xAD
+                    ctypes.windll.user32.keybd_event(VK_VOLUME_MUTE, 0, 0, 0)
+                    ctypes.windll.user32.keybd_event(VK_VOLUME_MUTE, 0, 2, 0) 
+                    self.success_sfx()
                 elif "activate coding mode" in command:
                     webbrowser.open("https://youtu.be/LVbUNRwpXzw?si=dp_7ajWR_qgWqf3S")
                     webbrowser.open("https://www.github.com/")
