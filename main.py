@@ -79,7 +79,6 @@ class VoxWidget(tk.Tk):
         self.porcupine_thread.start()
 
     def resource_path(self, relative_path):
-        """Get absolute path to resource, works for dev and PyInstaller."""
         try:
             base_path = sys._MEIPASS
         except Exception:
@@ -91,7 +90,25 @@ class VoxWidget(tk.Tk):
 
     def get_current_time(self):
         now = datetime.now()
+        print(now)
         return now.strftime("It's %I:%M %p")
+    
+    def greet_check(self):
+        now = datetime.now()
+        print(now)
+        hour = int(now.strftime("%I"))
+        m = now.strftime("%p")
+        print(hour)
+        print(m)
+        if(m=="AM")and(hour<=11):
+            return ("morning")
+        if(m=="PM")and((hour<=4)or(hour==12)):
+            return ("noon")
+        if(m=="PM")and((hour>=5)and(hour<=8)):
+            return ("evening")
+        if(m=="PM")and((hour>8)and(hour<12)):
+            return ("night")
+
 
     def get_weather(self):
         try:
@@ -233,6 +250,14 @@ class VoxWidget(tk.Tk):
                     time_now = self.get_current_time()
                     self.tts_engine.say(time_now)
                     self.success_sfx()
+                elif "good morning" in command:
+                    time = self.greet_check()
+                    if time=="morning":
+                       self.tts_engine.say("hey Boss Good morning")
+                       self.success_sfx() 
+                    else :
+                        self.tts_engine.say(f"Sorry its not morning,its {time}.mm.So Good{time}")
+                        self.success_sfx()
                 elif "open youtube" in command:
                     webbrowser.open("https://www.youtube.com")
                     self.success_sfx()
