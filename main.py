@@ -296,8 +296,7 @@ class VoxWidget(tk.Tk):
                 elif "open spotify" in command:
                     webbrowser.open("https://www.spotify.com")
                     self.success_sfx()
-                    self.tts_engine.say("Opening YouTube")
-                    self.tts_engine.say("Opening YouTube")
+                    self.tts_engine.say("Opening spotify")
                 elif "open google" in command:
                     webbrowser.open("https://www.google.com")
                     self.success_sfx()
