@@ -253,10 +253,38 @@ class VoxWidget(tk.Tk):
                 elif "good morning" in command:
                     time = self.greet_check()
                     if time=="morning":
-                       self.tts_engine.say("hey Boss Good morning")
+                       self.tts_engine.say("hey Boss ,Good morning")
                        self.success_sfx() 
                     else :
-                        self.tts_engine.say(f"Sorry its not morning,its {time}.mm.So Good{time}")
+                        self.tts_engine.say(f"Sorry its not morning,its {time}")
+                        self.tts_engine.say(f"So Good{time}")
+                        self.success_sfx()
+                elif "good afternoon" in command:
+                    time = self.greet_check()
+                    if time=="afternoon":
+                       self.tts_engine.say("hey Boss ,Good afternoon")
+                       self.success_sfx() 
+                    else :
+                        self.tts_engine.say(f"Sorry its not afternoon,its {time}")
+                        self.tts_engine.say(f"So Good{time}")
+                        self.success_sfx()
+                elif "good evening" in command:
+                    time = self.greet_check()
+                    if time=="evening":
+                       self.tts_engine.say("hey Boss ,Good evening")
+                       self.success_sfx() 
+                    else :
+                        self.tts_engine.say(f"Sorry its not evening,its {time}")
+                        self.tts_engine.say(f"So Good{time}")
+                        self.success_sfx()
+                elif "good night" in command:
+                    time = self.greet_check()
+                    if time=="night":
+                       self.tts_engine.say("hey Boss ,Good night")
+                       self.success_sfx() 
+                    else :
+                        self.tts_engine.say(f"Sorry its not night,its {time}")
+                        self.tts_engine.say(f"So Good{time}")
                         self.success_sfx()
                 elif "open youtube" in command:
                     webbrowser.open("https://www.youtube.com")
