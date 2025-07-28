@@ -20,7 +20,6 @@ import time
 import requests
 from datetime import datetime
 import sounddevice as sd
-import soundfile as sf
 import ctypes
 
 
@@ -286,6 +285,9 @@ class VoxWidget(tk.Tk):
                         self.tts_engine.say(f"Sorry its not night,its {time}")
                         self.tts_engine.say(f"So Good{time}")
                         self.success_sfx()
+                elif "play some music" or "music" in command:
+                    webbrowser.open("https://youtu.be/kAP72G5R4H8?si=1oMF20h0SvycG5UB")
+                    self.success_sfx()
                 elif "open youtube" in command:
                     webbrowser.open("https://www.youtube.com")
                     self.success_sfx()
@@ -301,7 +303,7 @@ class VoxWidget(tk.Tk):
                     webbrowser.open("https://www.google.com")
                     self.success_sfx()
                     self.tts_engine.say("Opening Google")
-                elif "open youtube" in command and "search" in command:
+                elif "in youtube search" in command:
                     parts = command.split()
                     if "search" in parts:
                         pos = parts.index("search")
