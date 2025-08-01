@@ -21,6 +21,8 @@ import requests
 from datetime import datetime
 import sounddevice as sd
 import ctypes
+import pyperclip
+
 
 
 
@@ -113,7 +115,7 @@ class VoxWidget(tk.Tk):
         try:
             response = requests.get("https://wttr.in/Kochi?format=3")
             w_info = response.text
-            temp = w_info[11:13]
+            temp = w_info[11:14]
             self.tts_engine.say(f"It's around {temp} degree Celsius now.")
             self.tts_engine.runAndWait()
         except Exception as e:
@@ -288,6 +290,12 @@ class VoxWidget(tk.Tk):
                 elif "play some music" or "music" in command:
                     webbrowser.open("https://youtu.be/kAP72G5R4H8?si=1oMF20h0SvycG5UB")
                     self.success_sfx()
+                elif "paste" in command:
+                    copy_content = command.replace("search", "").strip()
+                    pyperclip.copy(copy_content)
+                    pyperclip.paste()
+                    self.success_sfx()
+
                 elif "open youtube" in command:
                     webbrowser.open("https://www.youtube.com")
                     self.success_sfx()
