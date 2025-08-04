@@ -293,10 +293,10 @@ class VoxWidget(tk.Tk):
                     pyperclip.copy(copy_content)
                     pyautogui.hotkey('ctrl', 'v')
                     self.success_sfx()
-                elif "reload" and "site" in command :
+                elif "reload" in command:
                     pyautogui.hotkey("ctrl","r")
                     self.success_sfx()
-                elif "save it" or "save this" in command:
+                elif "save"in command:
                     pyautogui.hotkey('ctrl', 's')
                     self.tts_engine.say("Saved")
                     self.success_sfx()
