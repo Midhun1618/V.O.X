@@ -22,6 +22,7 @@ from datetime import datetime
 import sounddevice as sd
 import ctypes
 import pyperclip
+import pyautogui
 
 
 
@@ -287,15 +288,15 @@ class VoxWidget(tk.Tk):
                         self.tts_engine.say(f"Sorry its not night,its {time}")
                         self.tts_engine.say(f"So Good{time}")
                         self.success_sfx()
-                elif "play some music" or "music" in command:
-                    webbrowser.open("https://youtu.be/kAP72G5R4H8?si=1oMF20h0SvycG5UB")
-                    self.success_sfx()
                 elif "paste" in command:
-                    copy_content = command.replace("search", "").strip()
+                    copy_content = command.replace("paste", "").strip()
                     pyperclip.copy(copy_content)
-                    pyperclip.paste()
+                    pyautogui.hotkey('ctrl', 'v')
                     self.success_sfx()
-
+                elif "save it" or "save this" in command:
+                    pyautogui.hotkey('ctrl', 's')
+                    self.tts_engine.say("Saved")
+                    self.success_sfx()
                 elif "open youtube" in command:
                     webbrowser.open("https://www.youtube.com")
                     self.success_sfx()
