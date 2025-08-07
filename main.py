@@ -233,15 +233,75 @@ class VoxWidget(tk.Tk):
                         subprocess.Popen("notepad.exe")
                         self.success_sfx()
                         self.tts_engine.say("Opening Notepad")
+                    elif "control panel" in command:
+                        self.open_control_panel()
+                        self.success_sfx()
+                        self.tts_engine.say("Opening control panel")
+                    elif "settings" in command:
+                        os.system("start ms-settings:")
+                        self.tts_engine.say("Opening Windows system settings")
+                        self.success_sfx()
+                    elif "youtube" in command:
+                        webbrowser.open("https://www.youtube.com")
+                        self.success_sfx()
+                        self.tts_engine.say("Opening YouTube")
+                    elif "github" in command:
+                        webbrowser.open("https://www.github.com")
+                        self.success_sfx()
+                        self.tts_engine.say("Opening Github")
+                    elif "spotify" in command:
+                        webbrowser.open("https://www.spotify.com")
+                        self.success_sfx()
+                        self.tts_engine.say("Opening spotify")
+                    elif "google" in command:
+                        webbrowser.open("https://www.google.com")
+                        self.success_sfx()
+                        self.tts_engine.say("Opening Google")
+                    else:
+                        self.tts_engine.say("What do you want to open.")
+                elif "search" in command:
+                    doc = self.nlp(command)
+                    search_terms = []
 
-                if "open notepad" in command:
-                    subprocess.Popen("notepad.exe")
-                    self.success_sfx()
-                    self.tts_engine.say("Opening notepad")
-                elif "open control panel" in command or "control panel" in command:
-                    self.open_control_panel()
-                    self.success_sfx()
-                    self.tts_engine.say("Opening control panel")
+                    for token in doc:
+                        if token.dep_ in ["dobj", "pobj", "attr", "conj", "nsubj", "nmod"] or token.pos_ == "NOUN":
+                            search_terms.append(token.text)
+
+                    if not search_terms:
+                        parts = command.split()
+                        if "search" in parts:
+                            pos = parts.index("search")
+                            search_terms = parts[pos + 1:]
+
+                    search_query = " ".join(search_terms).lower()
+
+                    if "youtube" in command:
+                        for suffix in ["in youtube", "on youtube", "youtube","search"]:
+                            search_query = search_query.replace(suffix, "")
+                        search_query = search_query.strip()
+
+                        if search_query:
+                            encoded_query = urllib.parse.quote(search_query)
+                            url = f"https://www.youtube.com/results?search_query={encoded_query}"
+                            webbrowser.open(url)
+                            self.success_sfx()
+                            self.tts_engine.say(f"Searching {search_query} on YouTube")
+                        else:
+                            self.failure_sfx()
+                            self.tts_engine.say("I couldn't figure out what to search for on YouTube.")
+                    else:
+                        search_query = search_query.strip()
+                        if not search_query:
+                            search_query = command.replace("search", "").strip()
+
+                        if search_query:
+                            encoded_query = urllib.parse.quote(search_query)
+                            url = f"https://www.google.com/search?q={encoded_query}"
+                            webbrowser.open(url)
+                            self.success_sfx()
+                            self.tts_engine.say(f"Searching for {search_query}")
+                        else:
+                            self.tts_engine.say("What would you like me to search for?")
                 elif "your creator" in command or "who are you" in command:
                     self.success_sfx()
                     self.tts_engine.say("I'm Vox")
@@ -320,45 +380,10 @@ class VoxWidget(tk.Tk):
                     pyautogui.hotkey('ctrl', 's')
                     self.tts_engine.say("Saved")
                     self.success_sfx()
-                elif "open youtube" in command:
-                    webbrowser.open("https://www.youtube.com")
-                    self.success_sfx()
-                    self.tts_engine.say("Opening YouTube")
-                elif "open github" in command:
-                    webbrowser.open("https://www.github.com")
-                    self.success_sfx()
-                elif "open spotify" in command:
-                    webbrowser.open("https://www.spotify.com")
-                    self.success_sfx()
-                    self.tts_engine.say("Opening spotify")
-                elif "open google" in command:
-                    webbrowser.open("https://www.google.com")
-                    self.success_sfx()
-                    self.tts_engine.say("Opening Google")
-                elif "in youtube search" in command:
-                    parts = command.split()
-                    if "search" in parts:
-                        pos = parts.index("search")
-                        search_context = " ".join(parts[pos + 1:])
-                        encoded_query = urllib.parse.quote(search_context)
-                        url = f"https://www.youtube.com/results?search_query={encoded_query}"
-                        webbrowser.open(url)
-                        self.success_sfx()
-                        self.tts_engine.say(f"Searching {search_context} in Youtube")
-                elif "search" in command:
-                    search_term = command.replace("search", "").strip()
-                    url = f"https://www.google.com/search?q={urllib.parse.quote(search_term)}"
-                    webbrowser.open(url)
-                    self.success_sfx()
-                    self.tts_engine.say(f"Searching for {search_term}")
                 elif "exit" in command or "quit" in command:
                     self.tts_engine.say("Goodbye Boss!")
                     self.tts_engine.runAndWait()
                     sys.exit()
-                elif "open mail" in command:
-                    webbrowser.open("https://mail.google.com/mail/u/0/#inbox")
-                    self.success_sfx()
-                    self.tts_engine.say("Opening gmail right now")
                 elif "need assistance" in command or "open ai" in command:
                     webbrowser.open("https://chatgpt.com")
                     self.success_sfx()
