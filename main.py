@@ -23,6 +23,8 @@ import sounddevice as sd
 import ctypes
 import pyperclip
 import pyautogui
+import spacy
+
 
 
 
@@ -39,6 +41,9 @@ class VoxWidget(tk.Tk):
 
         pygame.mixer.init()
         self.update_idletasks()
+
+        self.nlp = spacy.load("en_core_web_sm")
+
 
         self.overrideredirect(True)
         self.attributes("-topmost", True)
@@ -221,6 +226,13 @@ class VoxWidget(tk.Tk):
                 self.after(0, self.update_transcript, text)
                 command = text.lower()
                 search_context = ""
+                doc = self.nlp(command)
+
+                if any(token.lemma_ == "open" for token in doc):
+                    if "notepad" in command:
+                        subprocess.Popen("notepad.exe")
+                        self.success_sfx()
+                        self.tts_engine.say("Opening Notepad")
 
                 if "open notepad" in command:
                     subprocess.Popen("notepad.exe")
@@ -291,8 +303,16 @@ class VoxWidget(tk.Tk):
                 elif "paste" in command:
                     copy_content = command.replace("paste", "").strip()
                     pyperclip.copy(copy_content)
-                    pyautogui.hotkey('ctrl', 'v')
-                    self.success_sfx()
+                    def perform_paste():
+                        try:
+                            pyautogui.hotkey('ctrl', 'v')
+                             
+                            self.after(0, self.success_sfx)
+                        except Exception as e:
+                            print("Paste error:", e)
+                            self.after(0, self.failure_sfx)
+                    threading.Thread(target=perform_paste, daemon=True).start()
+
                 elif "reload" in command:
                     pyautogui.hotkey("ctrl","r")
                     self.success_sfx()
