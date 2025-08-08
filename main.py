@@ -24,9 +24,7 @@ import ctypes
 import pyperclip
 import pyautogui
 import spacy
-
-
-
+from TTS.api import TTS
 
 
 ctk.set_appearance_mode("dark")
@@ -51,7 +49,8 @@ class VoxWidget(tk.Tk):
         self.configure(bg="white")
         self.attributes("-alpha", 0.7)
 
-        self.tts_engine = pyttsx3.init()
+        #self.tts_engine = pyttsx3.init()
+        self.tts = TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC")
 
         self.bind("<Button-1>", self.start_move)
         self.bind("<B1-Motion>", self.move_window)
@@ -84,6 +83,17 @@ class VoxWidget(tk.Tk):
 
         self.porcupine_thread = threading.Thread(target=self.wake_word_listener, daemon=True)
         self.porcupine_thread.start()
+        self.speak("Hi i'm vox, your own personal assistant")
+
+
+    def speak(self, text):
+        try:
+            output_path = "output.wav"
+            self.tts.tts_to_file(text=text, file_path=output_path,speed=1.3)
+            pygame.mixer.music.load(output_path)
+            pygame.mixer.music.play()
+        except Exception as e:
+            print("TTS Error:", e)
 
     def resource_path(self, relative_path):
         try:
@@ -122,7 +132,7 @@ class VoxWidget(tk.Tk):
             response = requests.get("https://wttr.in/Kochi?format=3")
             w_info = response.text
             temp = w_info[11:14]
-            self.tts_engine.say(f"It's around {temp} degree Celsius now.")
+            self.speak(f"It's around {temp} degree Celsius now.")
             self.tts_engine.runAndWait()
         except Exception as e:
             print("Error:", e)
@@ -232,37 +242,37 @@ class VoxWidget(tk.Tk):
                     if "notepad" in command:
                         subprocess.Popen("notepad.exe")
                         self.success_sfx()
-                        self.tts_engine.say("Opening Notepad")
+                        self.speak("Opening Notepad")
                     elif "control panel" in command:
                         self.open_control_panel()
                         self.success_sfx()
-                        self.tts_engine.say("Opening control panel")
+                        self.speak("Opening control panel")
                     elif "settings" in command:
                         os.system("start ms-settings:")
-                        self.tts_engine.say("Opening Windows system settings")
+                        self.speak("Opening Windows system settings")
                         self.success_sfx()
                     elif "mail" in command:
                         webbrowser.open("https://mail.google.com/mail/u/0/#inbox")
                         self.success_sfx()
-                        self.tts_engine.say("Opening Gmail")
+                        self.speak("Opening Gmail")
                     elif "youtube" in command:
                         webbrowser.open("https://www.youtube.com")
                         self.success_sfx()
-                        self.tts_engine.say("Opening YouTube")
+                        self.speak("Opening YouTube")
                     elif "github" in command:
                         webbrowser.open("https://www.github.com")
                         self.success_sfx()
-                        self.tts_engine.say("Opening Github")
+                        self.speak("Opening Github")
                     elif "spotify" in command:
                         webbrowser.open("https://www.spotify.com")
                         self.success_sfx()
-                        self.tts_engine.say("Opening spotify")
+                        self.speak("Opening spotify")
                     elif "google" in command:
                         webbrowser.open("https://www.google.com")
                         self.success_sfx()
-                        self.tts_engine.say("Opening Google")
+                        self.speak("Opening Google")
                     else:
-                        self.tts_engine.say("What do you want to open.")
+                        self.speak("What do you want to open.")
                 elif "search" in command:
                     doc = self.nlp(command)
                     search_terms = []
@@ -289,10 +299,10 @@ class VoxWidget(tk.Tk):
                             url = f"https://www.youtube.com/results?search_query={encoded_query}"
                             webbrowser.open(url)
                             self.success_sfx()
-                            self.tts_engine.say(f"Searching {search_query} on YouTube")
+                            self.speak(f"Searching {search_query} on YouTube")
                         else:
                             self.failure_sfx()
-                            self.tts_engine.say("I couldn't figure out what to search for on YouTube.")
+                            self.speak("I couldn't figure out what to search for on YouTube.")
                     else:
                         search_query = search_query.strip()
                         if not search_query:
@@ -303,66 +313,66 @@ class VoxWidget(tk.Tk):
                             url = f"https://www.google.com/search?q={encoded_query}"
                             webbrowser.open(url)
                             self.success_sfx()
-                            self.tts_engine.say(f"Searching for {search_query}")
+                            self.speak(f"Searching for {search_query}")
                         else:
-                            self.tts_engine.say("What would you like me to search for?")
+                            self.speak("What would you like me to search for?")
                 elif "your creator" in command or "who are you" in command:
                     self.success_sfx()
-                    self.tts_engine.say("I'm Vox")
-                    self.tts_engine.say("A virtual assistant developed by Midhun")
+                    self.speak("I'm Vox")
+                    self.speak("A virtual assistant developed by Midhun")
                 elif "buddy" in command or "what's up" in command:
                     self.success_sfx()
-                    self.tts_engine.say("How're you Boss? I am always here to assist you")
+                    self.speak("How're you Boss? I am always here to assist you")
                 elif "sleep" in command or "hide" in command:
                     os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
                     self.success_sfx()
-                    self.tts_engine.say("Going to sleep mode")
+                    self.speak("Going to sleep mode")
                 elif "open settings" in command:
                     os.system("start ms-settings:")
-                    self.tts_engine.say("Opening Windows system settings")
+                    self.speak("Opening Windows system settings")
                     self.success_sfx()
                 elif "what's the weather" in command or "weather" in command:
                     self.get_weather()
                     self.success_sfx()
                 elif "what's the time" in command or "current time" in command:
                     time_now = self.get_current_time()
-                    self.tts_engine.say(time_now)
+                    self.speak(time_now)
                     self.success_sfx()
                 elif "good morning" in command:
                     time = self.greet_check()
                     if time=="morning":
-                       self.tts_engine.say("hey Boss ,Good morning")
+                       self.speak("hey Boss ,Good morning")
                        self.success_sfx() 
                     else :
-                        self.tts_engine.say(f"Sorry its not morning,its {time}")
-                        self.tts_engine.say(f"So Good{time}")
+                        self.speak(f"Sorry its not morning,its {time}")
+                        self.speak(f"So Good{time}")
                         self.success_sfx()
                 elif "good afternoon" in command:
                     time = self.greet_check()
                     if time=="afternoon":
-                       self.tts_engine.say("hey Boss ,Good afternoon")
+                       self.speak("hey Boss ,Good afternoon")
                        self.success_sfx() 
                     else :
-                        self.tts_engine.say(f"Sorry its not afternoon,its {time}")
-                        self.tts_engine.say(f"So Good{time}")
+                        self.speak(f"Sorry its not afternoon,its {time}")
+                        self.speak(f"So Good{time}")
                         self.success_sfx()
                 elif "good evening" in command:
                     time = self.greet_check()
                     if time=="evening":
-                       self.tts_engine.say("hey Boss ,Good evening")
+                       self.speak("hey Boss ,Good evening")
                        self.success_sfx() 
                     else :
-                        self.tts_engine.say(f"Sorry its not evening,its {time}")
-                        self.tts_engine.say(f"So Good{time}")
+                        self.speak(f"Sorry its not evening,its {time}")
+                        self.speak(f"So Good{time}")
                         self.success_sfx()
                 elif "good night" in command:
                     time = self.greet_check()
                     if time=="night":
-                       self.tts_engine.say("hey Boss ,Good night")
+                       self.speak("hey Boss ,Good night")
                        self.success_sfx() 
                     else :
-                        self.tts_engine.say(f"Sorry its not night,its {time}")
-                        self.tts_engine.say(f"So Good{time}")
+                        self.speak(f"Sorry its not night,its {time}")
+                        self.speak(f"So Good{time}")
                         self.success_sfx()
                 elif "paste" in command:
                     copy_content = command.replace("paste", "").strip()
@@ -382,16 +392,16 @@ class VoxWidget(tk.Tk):
                     self.success_sfx()
                 elif "save"in command:
                     pyautogui.hotkey('ctrl', 's')
-                    self.tts_engine.say("Saved")
+                    self.speak("Saved")
                     self.success_sfx()
                 elif "exit" in command or "quit" in command:
-                    self.tts_engine.say("Goodbye Boss!")
+                    self.speak("Goodbye Boss!")
                     self.tts_engine.runAndWait()
                     sys.exit()
                 elif "need assistance" in command or "open ai" in command:
                     webbrowser.open("https://chatgpt.com")
                     self.success_sfx()
-                    self.tts_engine.say("Opening chat GPT for assistance.")
+                    self.speak("Opening chat GPT for assistance.")
                 elif "mute" in command:
                     VK_VOLUME_MUTE = 0xAD
                     ctypes.windll.user32.keybd_event(VK_VOLUME_MUTE, 0, 0, 0)
@@ -402,14 +412,14 @@ class VoxWidget(tk.Tk):
                     webbrowser.open("https://www.github.com/")
                     webbrowser.open("https://chatgpt.com")
                     self.success_sfx()
-                    self.tts_engine.say("Activating programming mode, initializing chat GPT,Git hub and Youtube")
+                    self.speak("Activating programming mode, initializing chat GPT,Git hub and Youtube")
 
                 elif "add task" in command:
                     task_text = command.replace("add task", "").strip()
                     data = self.load_tasks()
                     data["tasks"].append(task_text)
                     self.save_tasks(data)
-                    self.tts_engine.say(f"Task added: {task_text}")
+                    self.speak(f"Task added: {task_text}")
                     self.tts_engine.runAndWait()
                     self.success_sfx()
                 elif "task is done" in command:
@@ -425,21 +435,21 @@ class VoxWidget(tk.Tk):
                         
                         self.save_tasks(data)
                         
-                        self.tts_engine.say(f"Marking task '{task_keyword}' as done.")
+                        self.speak(f"Marking task '{task_keyword}' as done.")
                         self.success_sfx()
                     else:
-                        self.tts_engine.say(f"Can't find '{task_keyword}' in tasks")
+                        self.speak(f"Can't find '{task_keyword}' in tasks")
                         self.failure_sfx()
 
                 elif "read my task" in command or "read my tasks" in command:
                     data = self.load_tasks()
                     tasks = data.get("tasks", [])
                     if tasks:
-                        self.tts_engine.say("Here are your tasks:")
+                        self.speak("Here are your tasks:")
                         for task in tasks:
-                             self.tts_engine.say(task)
+                             self.speak(task)
                     else:
-                         self.tts_engine.say("You don't have any tasks right now.")
+                         self.speak("You don't have any tasks right now.")
 
                 else:
                     no_response_phrases = [
@@ -450,7 +460,7 @@ class VoxWidget(tk.Tk):
                         "Hmm, not sure what you meant."
                     ]
 
-                    self.tts_engine.say(random.choice(no_response_phrases))
+                    self.speak(random.choice(no_response_phrases))
                 self.tts_engine.runAndWait()
 
             except sr.WaitTimeoutError:
