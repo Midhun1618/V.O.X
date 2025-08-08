@@ -241,6 +241,10 @@ class VoxWidget(tk.Tk):
                         os.system("start ms-settings:")
                         self.tts_engine.say("Opening Windows system settings")
                         self.success_sfx()
+                    elif "mail" in command:
+                        webbrowser.open("https://mail.google.com/mail/u/0/#inbox")
+                        self.success_sfx()
+                        self.tts_engine.say("Opening Gmail")
                     elif "youtube" in command:
                         webbrowser.open("https://www.youtube.com")
                         self.success_sfx()
