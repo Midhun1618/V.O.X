@@ -49,7 +49,6 @@ class VoxWidget(tk.Tk):
         self.configure(bg="white")
         self.attributes("-alpha", 0.7)
 
-        #self.tts_engine = pyttsx3.init()
         self.tts = TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC")
 
         self.bind("<Button-1>", self.start_move)
@@ -132,8 +131,7 @@ class VoxWidget(tk.Tk):
             response = requests.get("https://wttr.in/Kochi?format=3")
             w_info = response.text
             temp = w_info[11:14]
-            self.speak(f"It's around {temp} degree Celsius now.")
-            self.tts_engine.runAndWait()
+            self.speak(f"It's around {temp} degree Celsius now.")  
         except Exception as e:
             print("Error:", e)
 
@@ -374,29 +372,28 @@ class VoxWidget(tk.Tk):
                         self.speak(f"Sorry its not night,its {time}")
                         self.speak(f"So Good{time}")
                         self.success_sfx()
-                elif "paste" in command:
-                    copy_content = command.replace("paste", "").strip()
-                    pyperclip.copy(copy_content)
-                    def perform_paste():
-                        try:
-                            pyautogui.hotkey('ctrl', 'v')
+                # elif "paste" in command:
+                #     copy_content = command.replace("paste", "").strip()
+                #     pyperclip.copy(copy_content)
+                #     def perform_paste():
+                #         try:
+                #             pyautogui.hotkey('ctrl', 'v')
                              
-                            self.after(0, self.success_sfx)
-                        except Exception as e:
-                            print("Paste error:", e)
-                            self.after(0, self.failure_sfx)
-                    threading.Thread(target=perform_paste, daemon=True).start()
+                #             self.after(0, self.success_sfx)
+                #         except Exception as e:
+                #             print("Paste error:", e)
+                #             self.after(0, self.failure_sfx)
+                #     threading.Thread(target=perform_paste, daemon=True).start()
 
-                elif "reload" in command:
-                    pyautogui.hotkey("ctrl","r")
-                    self.success_sfx()
-                elif "save"in command:
-                    pyautogui.hotkey('ctrl', 's')
-                    self.speak("Saved")
-                    self.success_sfx()
+                # elif "reload" in command:
+                #     pyautogui.hotkey("ctrl","r")
+                #     self.success_sfx()
+                # elif "save"in command:
+                #     pyautogui.hotkey('ctrl', 's')
+                #     self.speak("Saved")
+                #     self.success_sfx()
                 elif "exit" in command or "quit" in command:
                     self.speak("Goodbye Boss!")
-                    self.tts_engine.runAndWait()
                     sys.exit()
                 elif "need assistance" in command or "open ai" in command:
                     webbrowser.open("https://chatgpt.com")
