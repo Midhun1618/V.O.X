@@ -332,44 +332,49 @@ class VoxWidget(tk.Tk):
                     self.get_weather()
                     self.success_sfx()
                 elif "what's the time" in command or "current time" in command:
-                    self.get_current_time()
                     self.success_sfx()
+                    self.get_current_time()
+                    
                 elif "good morning" in command:
                     time = self.greet_check()
                     if time=="morning":
+                       self.success_sfx()
                        self.speak("hey Boss ,Good morning")
-                       self.success_sfx() 
+                        
                     else :
-                        self.speak(f"Sorry its not morning,its {time}")
-                        self.speak(f"So Good{time}")
                         self.success_sfx()
+                        self.speak(f"Sorry its not morning,its {time},So Good{time}")
+                        
                 elif "good afternoon" in command:
                     time = self.greet_check()
                     if time=="afternoon":
+                       self.success_sfx()
                        self.speak("hey Boss ,Good afternoon")
-                       self.success_sfx() 
+                       
                     else :
-                        self.speak(f"Sorry its not afternoon,its {time}")
-                        self.speak(f"So Good{time}")
                         self.success_sfx()
+                        self.speak(f"Sorry its not afternoon,its {time},So Good{time}")
+                        
                 elif "good evening" in command:
                     time = self.greet_check()
                     if time=="evening":
+                       self.success_sfx()
                        self.speak("hey Boss ,Good evening")
-                       self.success_sfx() 
+                       
                     else :
-                        self.speak(f"Sorry its not evening,its {time}")
-                        self.speak(f"So Good{time}")
                         self.success_sfx()
+                        self.speak(f"Sorry its not evening,its {time},So Good{time}")
+                        
                 elif "good night" in command:
                     time = self.greet_check()
                     if time=="night":
+                       self.success_sfx()
                        self.speak("hey Boss ,Good night")
-                       self.success_sfx() 
+                       
                     else :
-                        self.speak(f"Sorry its not night,its {time}")
-                        self.speak(f"So Good{time}")
                         self.success_sfx()
+                        self.speak(f"Sorry its not night,its {time},So Good{time}")
+                        
                 elif "paste" in command:
                     copy_content = command.replace("paste", "").strip()
                     pyperclip.copy(copy_content)
@@ -386,10 +391,15 @@ class VoxWidget(tk.Tk):
                 elif "reload" in command:
                     pyautogui.hotkey("ctrl","r")
                     self.success_sfx()
+                elif "reload" in command:
+                    pyautogui.hotkey("ctrl","a")
+                    pyautogui.hotkey("ctrl","c")
+                    self.success_sfx()
                 elif "save"in command:
                     pyautogui.hotkey('ctrl', 's')
-                    self.speak("Saved")
                     self.success_sfx()
+                    self.speak("Saved")
+                    
                 elif "exit" in command or "quit" in command:
                     self.speak("Goodbye Boss!")
                     sys.exit()
