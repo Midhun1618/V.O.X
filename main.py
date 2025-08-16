@@ -236,10 +236,14 @@ class VoxWidget(tk.Tk):
                 doc = self.nlp(command)
 
                 if any(token.lemma_ == "open" for token in doc):
+                    
                     if "notepad" in command:
                         subprocess.Popen("notepad.exe")
                         self.success_sfx()
                         self.speak("Opening Notepad")
+                    elif "settings" in command:
+                        os.system("start ms-settings:")
+                        self.speak("Opening Windows system settings")
                     elif "control panel" in command:
                         self.open_control_panel()
                         self.success_sfx()
@@ -324,9 +328,7 @@ class VoxWidget(tk.Tk):
                     os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
                     self.success_sfx()
                     self.speak("Going to sleep mode")
-                elif "open settings" in command:
-                    os.system("start ms-settings:")
-                    self.speak("Opening Windows system settings")
+                
                     self.success_sfx()
                 elif "what's the weather" in command or "weather" in command:
                     self.get_weather()
@@ -387,11 +389,14 @@ class VoxWidget(tk.Tk):
                             print("Paste error:", e)
                             self.after(0, self.failure_sfx)
                     threading.Thread(target=perform_paste, daemon=True).start()
+                elif "paste previous" in command :
+                    pyautogui.hotkey("ctrl","v")
+                    self.success_sfx()
 
                 elif "reload" in command:
                     pyautogui.hotkey("ctrl","r")
                     self.success_sfx()
-                elif "reload" in command:
+                elif ("copy all" or "select all and copy") in command:
                     pyautogui.hotkey("ctrl","a")
                     pyautogui.hotkey("ctrl","c")
                     self.success_sfx()
@@ -403,7 +408,7 @@ class VoxWidget(tk.Tk):
                 elif "exit" in command or "quit" in command:
                     self.speak("Goodbye Boss!")
                     sys.exit()
-                elif "need assistance" in command or "open ai" in command:
+                elif "need assistance" in command or "open chat gpt" in command:
                     webbrowser.open("https://chatgpt.com")
                     self.success_sfx()
                     self.speak("Opening chat GPT for assistance.")
@@ -416,6 +421,10 @@ class VoxWidget(tk.Tk):
                     webbrowser.open("https://youtu.be/LVbUNRwpXzw?si=dp_7ajWR_qgWqf3S")
                     webbrowser.open("https://www.github.com/")
                     webbrowser.open("https://chatgpt.com")
+                    pyautogui.hotkey("win")
+                    pyperclip.copy("visual studio code")
+                    pyautogui.hotkey("ctrl","v")
+                    pyautogui.press('enter')
                     self.success_sfx()
                     self.speak("Activating programming mode, initializing chat GPT,Git hub and Youtube")
 
@@ -425,7 +434,6 @@ class VoxWidget(tk.Tk):
                     data["tasks"].append(task_text)
                     self.save_tasks(data)
                     self.speak(f"Task added: {task_text}")
-                    self.tts_engine.runAndWait()
                     self.success_sfx()
                 elif "task is done" in command:
                     data = self.load_tasks()
