@@ -2,7 +2,6 @@ import customtkinter as ctk
 import speech_recognition as sr
 import threading
 import sys
-import pyttsx3
 import pvporcupine
 import pyaudio
 import struct
@@ -82,7 +81,7 @@ class VoxWidget(tk.Tk):
 
         self.porcupine_thread = threading.Thread(target=self.wake_word_listener, daemon=True)
         self.porcupine_thread.start()
-        self.speak("Hi i'm vox, your own personal assistant")
+        self.speak("Hi, i am vox, your own personal assistant")
 
 
     def speak(self, text):
@@ -107,7 +106,7 @@ class VoxWidget(tk.Tk):
     def get_current_time(self):
         now = datetime.now()
         print(now)
-        return now.strftime("It's %I:%M %p")
+        self.speak(now.strftime("It's %I:%M %p"))
     
     def greet_check(self):
         now = datetime.now()
@@ -333,8 +332,7 @@ class VoxWidget(tk.Tk):
                     self.get_weather()
                     self.success_sfx()
                 elif "what's the time" in command or "current time" in command:
-                    time_now = self.get_current_time()
-                    self.speak(time_now)
+                    self.get_current_time()
                     self.success_sfx()
                 elif "good morning" in command:
                     time = self.greet_check()
@@ -372,26 +370,26 @@ class VoxWidget(tk.Tk):
                         self.speak(f"Sorry its not night,its {time}")
                         self.speak(f"So Good{time}")
                         self.success_sfx()
-                # elif "paste" in command:
-                #     copy_content = command.replace("paste", "").strip()
-                #     pyperclip.copy(copy_content)
-                #     def perform_paste():
-                #         try:
-                #             pyautogui.hotkey('ctrl', 'v')
+                elif "paste" in command:
+                    copy_content = command.replace("paste", "").strip()
+                    pyperclip.copy(copy_content)
+                    def perform_paste():
+                        try:
+                            pyautogui.hotkey('ctrl', 'v')
                              
-                #             self.after(0, self.success_sfx)
-                #         except Exception as e:
-                #             print("Paste error:", e)
-                #             self.after(0, self.failure_sfx)
-                #     threading.Thread(target=perform_paste, daemon=True).start()
+                            self.after(0, self.success_sfx)
+                        except Exception as e:
+                            print("Paste error:", e)
+                            self.after(0, self.failure_sfx)
+                    threading.Thread(target=perform_paste, daemon=True).start()
 
-                # elif "reload" in command:
-                #     pyautogui.hotkey("ctrl","r")
-                #     self.success_sfx()
-                # elif "save"in command:
-                #     pyautogui.hotkey('ctrl', 's')
-                #     self.speak("Saved")
-                #     self.success_sfx()
+                elif "reload" in command:
+                    pyautogui.hotkey("ctrl","r")
+                    self.success_sfx()
+                elif "save"in command:
+                    pyautogui.hotkey('ctrl', 's')
+                    self.speak("Saved")
+                    self.success_sfx()
                 elif "exit" in command or "quit" in command:
                     self.speak("Goodbye Boss!")
                     sys.exit()
@@ -458,7 +456,6 @@ class VoxWidget(tk.Tk):
                     ]
 
                     self.speak(random.choice(no_response_phrases))
-                self.tts_engine.runAndWait()
 
             except sr.WaitTimeoutError:
                 self.after(0, self.update_transcript, "Listening timed out, try again.")
