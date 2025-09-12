@@ -31,6 +31,8 @@ ctk.set_default_color_theme("blue")
 sd.default.device = (1, None)
 
 ACCESS_KEY = "l4YcMaXwFVLjkElTdruR5vz2fjZ3Vwd0CuGnfDR/lg0ifYd/iQzgmA=="
+GCS_API_KEY = "AIzaSyC4P9OCO210xousdXRvN6D77YUndtAiPfw"
+GCS_CX = "653078d66990b4440"
 
 class VoxWidget(tk.Tk):
     def __init__(self):
@@ -87,11 +89,23 @@ class VoxWidget(tk.Tk):
     def speak(self, text):
         try:
             output_path = "output.wav"
-            self.tts.tts_to_file(text=text, file_path=output_path,speed=1.3)
+            self.tts.tts_to_file(text=text, file_path=output_path,speed=1.8)
             pygame.mixer.music.load(output_path)
             pygame.mixer.music.play()
         except Exception as e:
             print("TTS Error:", e)
+
+    def google_search(self,query, num_results=1):
+        url = "https://www.googleapis.com/customsearch/v1"
+        params = {
+            "key": GCS_API_KEY,
+            "cx": GCS_CX,
+            "q": query,
+            "num": num_results
+        }
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        return response.json()
 
     def resource_path(self, relative_path):
         try:
@@ -235,6 +249,8 @@ class VoxWidget(tk.Tk):
                 command = text.lower()
                 doc = self.nlp(command)
 
+                QUESTION_WORDS = ["what", "who", "when", "where", "why", "how"]
+
                 if any(token.lemma_ == "open" for token in doc):
                     
                     if "notepad" in command:
@@ -338,44 +354,44 @@ class VoxWidget(tk.Tk):
                     self.get_current_time()
                     
                 elif "good morning" in command:
-                    time = self.greet_check()
-                    if time=="morning":
+                    time_current = self.greet_check()
+                    if time_current=="morning":
                        self.success_sfx()
                        self.speak("hey Boss ,Good morning")
                         
                     else :
                         self.success_sfx()
-                        self.speak(f"Sorry its not morning,its {time},So Good{time}")
+                        self.speak(f"Sorry its not morning,its {time_current},So Good{time_current}")
                         
                 elif "good afternoon" in command:
-                    time = self.greet_check()
-                    if time=="afternoon":
+                    time_current = self.greet_check()
+                    if time_current=="afternoon":
                        self.success_sfx()
                        self.speak("hey Boss ,Good afternoon")
                        
                     else :
                         self.success_sfx()
-                        self.speak(f"Sorry its not afternoon,its {time},So Good{time}")
+                        self.speak(f"Sorry its not afternoon,its {time_current},So Good{time_current}")
                         
                 elif "good evening" in command:
-                    time = self.greet_check()
-                    if time=="evening":
+                    time_current = self.greet_check()
+                    if time_current=="evening":
                        self.success_sfx()
                        self.speak("hey Boss ,Good evening")
                        
                     else :
                         self.success_sfx()
-                        self.speak(f"Sorry its not evening,its {time},So Good{time}")
+                        self.speak(f"Sorry its not evening,its {time_current},So Good{time_current}")
                         
                 elif "good night" in command:
-                    time = self.greet_check()
-                    if time=="night":
+                    time_current = self.greet_check()
+                    if time_current=="night":
                        self.success_sfx()
                        self.speak("hey Boss ,Good night")
                        
                     else :
                         self.success_sfx()
-                        self.speak(f"Sorry its not night,its {time},So Good{time}")
+                        self.speak(f"Sorry its not night,its {time_current},So Good{time_current}")
                         
                 elif "paste" in command:
                     copy_content = command.replace("paste", "").strip()
@@ -408,6 +424,20 @@ class VoxWidget(tk.Tk):
                 elif "exit" in command or "quit" in command:
                     self.speak("Goodbye Boss!")
                     sys.exit()
+                elif any(word in command.lower() for word in QUESTION_WORDS):
+                    location = None
+                    for ent in doc.ents:
+                        if ent.label_ == "GPE": 
+                            location = ent.text
+                    gcs_results = self.google_search(command)
+                    for item in gcs_results.get("items", []):
+                        gcs_result_snippet=item.get("snippet")
+                        self.success_sfx()
+                        sentences = gcs_result_snippet.split(". ")
+                        for sentence in sentences:
+                            self.speak(sentence)
+
+                    
                 elif "need assistance" in command or "open chat gpt" in command:
                     webbrowser.open("https://chatgpt.com")
                     self.success_sfx()
@@ -416,6 +446,27 @@ class VoxWidget(tk.Tk):
                     VK_VOLUME_MUTE = 0xAD
                     ctypes.windll.user32.keybd_event(VK_VOLUME_MUTE, 0, 0, 0)
                     ctypes.windll.user32.keybd_event(VK_VOLUME_MUTE, 0, 2, 0) 
+                    self.success_sfx()
+                elif "full volume" in command or ("maximum volume" or "max volume") in command:
+                    VK_VOLUME_UP = 0xAF 
+                    for _ in range(100): 
+                        ctypes.windll.user32.keybd_event(VK_VOLUME_UP, 0, 0, 0)
+                        ctypes.windll.user32.keybd_event(VK_VOLUME_UP, 0, 2, 0)
+                        time.sleep(0.01)
+                    self.success_sfx()
+                elif "increase volume" in command or "volume up" in command:
+                    VK_VOLUME_UP = 0xAF 
+                    for _ in range(10): 
+                        ctypes.windll.user32.keybd_event(VK_VOLUME_UP, 0, 0, 0)
+                        ctypes.windll.user32.keybd_event(VK_VOLUME_UP, 0, 2, 0)
+                        time.sleep(0.01)
+                    self.success_sfx()
+                elif ("volume" in command) and ("decrease" in command or "down" in command):
+                    VK_VOLUME_DOWN = 0xAE 
+                    for _ in range(10): 
+                        ctypes.windll.user32.keybd_event(VK_VOLUME_DOWN, 0, 0, 0)
+                        ctypes.windll.user32.keybd_event(VK_VOLUME_DOWN, 0, 2, 0)
+                        time.sleep(0.1)
                     self.success_sfx()
                 elif "activate coding mode" in command:
                     webbrowser.open("https://youtu.be/LVbUNRwpXzw?si=dp_7ajWR_qgWqf3S")
@@ -481,7 +532,6 @@ class VoxWidget(tk.Tk):
                         "Please repeat that.",
                         "Hmm, not sure what you meant."
                     ]
-
                     self.speak(random.choice(no_response_phrases))
 
         except sr.WaitTimeoutError:
