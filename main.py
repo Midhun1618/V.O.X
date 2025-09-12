@@ -225,14 +225,14 @@ class VoxWidget(tk.Tk):
             print(f"Wake word error: {e}")
 
     def listen_for_command(self):
-        with self.microphone as source:
-            self.recognizer.adjust_for_ambient_noise(source, duration=1)
-            try:
+        try:
+            with sr.Microphone() as source: 
+                self.recognizer.adjust_for_ambient_noise(source, duration=1)
                 audio = self.recognizer.listen(source, timeout=5, phrase_time_limit=5)
+
                 text = self.recognizer.recognize_google(audio)
                 self.after(0, self.update_transcript, text)
                 command = text.lower()
-                search_context = ""
                 doc = self.nlp(command)
 
                 if any(token.lemma_ == "open" for token in doc):
@@ -463,6 +463,15 @@ class VoxWidget(tk.Tk):
                              self.speak(task)
                     else:
                          self.speak("You don't have any tasks right now.")
+                elif "help me" in command or "can you help" in command:
+                    self.speak("Ofcourse, how can i help you?")
+                    self.listening_for_command = True
+                    self.after(0, self.update_transcript, "Help: Listening for command")
+                    self.glow_listen(True)
+                    self.listen_for_command()
+                    self.listening_for_command = False
+                    self.after(0, self.update_transcript, "Waiting for wake word 'VOX'...")
+                    self.glow_listen(False)
 
                 else:
                     no_response_phrases = [
@@ -475,15 +484,17 @@ class VoxWidget(tk.Tk):
 
                     self.speak(random.choice(no_response_phrases))
 
-            except sr.WaitTimeoutError:
-                self.after(0, self.update_transcript, "Listening timed out, try again.")
-                self.failure_sfx()
-            except sr.UnknownValueError:
-                self.after(0, self.update_transcript, "Sorry, I did not understand that.")
-                self.failure_sfx()
-            except sr.RequestError as e:
-                self.after(0, self.update_transcript, f"Could not request results; {e}")
-                self.failure_sfx()
+        except sr.WaitTimeoutError:
+            self.after(0, self.update_transcript, "Listening timed out, try again.")
+            self.failure_sfx()
+        except sr.UnknownValueError:
+            self.after(0, self.update_transcript, "Sorry, I did not understand that.")
+            self.failure_sfx()
+        except sr.RequestError as e:
+            self.after(0, self.update_transcript, f"Could not request results; {e}")
+            self.failure_sfx()
+        except Exception as e:
+            print(f"Unexpected error while listening: {e}")
 
     def success_sfx(self):
         try:
