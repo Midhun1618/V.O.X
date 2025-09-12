@@ -30,9 +30,10 @@ ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 sd.default.device = (1, None)
 
-ACCESS_KEY = "l4YcMaXwFVLjkElTdruR5vz2fjZ3Vwd0CuGnfDR/lg0ifYd/iQzgmA=="
-GCS_API_KEY = "AIzaSyC4P9OCO210xousdXRvN6D77YUndtAiPfw"
-GCS_CX = "653078d66990b4440"
+
+GCS_API_KEY = os.getenv("GCS_API_KEY")
+GCS_CX = os.getenv("GCS_CX")
+ACCESS_KEY = os.getenv("ACCESS_KEY")
 
 class VoxWidget(tk.Tk):
     def __init__(self):
