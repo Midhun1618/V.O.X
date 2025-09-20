@@ -24,16 +24,17 @@ import pyperclip
 import pyautogui
 import spacy
 from TTS.api import TTS
+from dotenv import load_dotenv
 
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 sd.default.device = (1, None)
 
-
+load_dotenv()
+ACCESS_KEY = "l4YcMaXwFVLjkElTdruR5vz2fjZ3Vwd0CuGnfDR/lg0ifYd/iQzgmA=="
 GCS_API_KEY = os.getenv("GCS_API_KEY")
 GCS_CX = os.getenv("GCS_CX")
-ACCESS_KEY = os.getenv("ACCESS_KEY")
 
 class VoxWidget(tk.Tk):
     def __init__(self):
@@ -85,8 +86,7 @@ class VoxWidget(tk.Tk):
         self.porcupine_thread = threading.Thread(target=self.wake_word_listener, daemon=True)
         self.porcupine_thread.start()
         self.speak("Hi, i am vox, your own personal assistant")
-
-
+        
     def speak(self, text):
         try:
             output_path = "output.wav"
