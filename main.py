@@ -25,7 +25,16 @@ import pyautogui
 import spacy
 from TTS.api import TTS
 from dotenv import load_dotenv
+import torch.nn as nn
+import numpy as np
+import pickle
+import torch
 
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    subprocess.check_call([sys.executable, "-m", "spacy", "download", "en_core_web_sm"])
+    nlp = spacy.load("en_core_web_sm")
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -42,6 +51,9 @@ class VoxWidget(tk.Tk):
 
         pygame.mixer.init()
         self.update_idletasks()
+
+        self.iconbitmap("vox_icon.ico")
+        self.title("VOX")
 
         self.nlp = spacy.load("en_core_web_sm")
 
@@ -82,7 +94,6 @@ class VoxWidget(tk.Tk):
         self.pa = None
         self.stream = None
         self.listening_for_command = False
-
         self.porcupine_thread = threading.Thread(target=self.wake_word_listener, daemon=True)
         self.porcupine_thread.start()
         self.speak("Hi, i am vox, your own personal assistant")
@@ -394,6 +405,10 @@ class VoxWidget(tk.Tk):
                         self.success_sfx()
                         self.speak(f"Sorry its not night,its {time_current},So Good{time_current}")
                         
+                elif "paste previous" in command :
+                    pyautogui.hotkey("ctrl","v")
+                    self.success_sfx()
+                        
                 elif "paste" in command:
                     copy_content = command.replace("paste", "").strip()
                     pyperclip.copy(copy_content)
@@ -406,9 +421,6 @@ class VoxWidget(tk.Tk):
                             print("Paste error:", e)
                             self.after(0, self.failure_sfx)
                     threading.Thread(target=perform_paste, daemon=True).start()
-                elif "paste previous" in command :
-                    pyautogui.hotkey("ctrl","v")
-                    self.success_sfx()
 
                 elif "reload" in command:
                     pyautogui.hotkey("ctrl","r")

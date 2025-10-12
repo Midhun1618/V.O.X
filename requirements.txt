@@ -1,0 +1,15 @@
+customtkinter
+SpeechRecognition
+pvporcupine
+PyAudio
+pygame
+Pillow
+requests
+sounddevice
+pyperclip
+pyautogui
+spacy
+TTS
+python-dotenv
+torch
+numpy
