@@ -9,7 +9,6 @@ sounddevice
 pyperclip
 pyautogui
 spacy
-TTS
 python-dotenv
 torch
 numpy
