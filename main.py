@@ -107,17 +107,42 @@ class VoxWidget(tk.Tk):
         except Exception as e:
             print("TTS Error:", e)
 
-    def google_search(self,query, num_results=1):
-        url = "https://www.googleapis.com/customsearch/v1"
-        params = {
-            "key": GCS_API_KEY,
-            "cx": GCS_CX,
-            "q": query,
-            "num": num_results
+    def clean_query(self, command):
+        command = command.lower()
+
+        fillers = [
+            "transcript:", "transcript", 
+            "what is", "who is", "define", 
+            "explain", "tell me about", 
+            "describe", "what are", "where is"
+        ]
+
+        for f in fillers:
+            if f in command:
+                command = command.replace(f, "")
+
+        command = command.strip().replace("?", "").replace(".", "")
+        print(command)
+        
+        return command.title()
+
+
+    def wiki_search(self, query):
+        url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + query.replace(" ", "_")
+        print("url:", url)
+
+        headers = {
+            "User-Agent": "VoxAssistant/1.0 (https://github.com/Midhun1618)"
         }
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        return response.json()
+        res = requests.get(url,headers=headers)
+        print("status:", res.status_code)
+
+        if res.status_code == 200:
+            data = res.json()
+            return data.get("extract")
+        else:
+            return None
+
 
     def resource_path(self, relative_path):
         try:
@@ -261,7 +286,7 @@ class VoxWidget(tk.Tk):
                 command = text.lower()
                 doc = self.nlp(command)
 
-                QUESTION_WORDS = ["what", "who", "when", "where", "why", "how"]
+                QUESTION_WORDS = ["what", "who", "when", "where", "why", "how","tell me about"]
 
                 if any(token.lemma_ == "open" for token in doc):
                     
@@ -438,18 +463,18 @@ class VoxWidget(tk.Tk):
                     self.speak("Goodbye Boss!")
                     sys.exit()
                 elif any(word in command.lower() for word in QUESTION_WORDS):
-                    location = None
                     for ent in doc.ents:
                         if ent.label_ == "GPE": 
                             location = ent.text
-                    gcs_results = self.google_search(command)
-                    for item in gcs_results.get("items", []):
-                        gcs_result_snippet=item.get("snippet")
+                    query = self.clean_query(command)
+                    summary = self.wiki_search(query)
+                    if summary is not None:
                         self.success_sfx()
-                        sentences = gcs_result_snippet.split(". ")
+                        sentences = summary.split(". ")
                         for sentence in sentences:
                             self.speak(sentence)
-
+                    else:
+                        self.speak("I could not find any information on that.")
                     
                 elif "need assistance" in command or "open chat gpt" in command:
                     webbrowser.open("https://chatgpt.com")
