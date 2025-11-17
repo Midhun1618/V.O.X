@@ -60,9 +60,9 @@ class VoxWidget(tk.Tk):
 
         self.overrideredirect(True)
         self.attributes("-topmost", True)
-        self.attributes("-transparentcolor", "white")
-        self.configure(bg="white")
-        self.attributes("-alpha", 0.7)
+        self.attributes("-transparentcolor", "black")
+        self.configure(bg="black")
+        self.attributes("-alpha", 1.0)
 
         self.tts = TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC")
 
@@ -76,13 +76,12 @@ class VoxWidget(tk.Tk):
         y = screen_height - window_size - 70
         self.geometry(f"{window_size}x{window_size}+{x}+{y}")
 
-        self.main_frame = ctk.CTkFrame(self, corner_radius=15)
+        self.main_frame = ctk.CTkFrame(self, corner_radius=0, fg_color="black")
         self.main_frame.pack(fill="both", expand=True)
 
-        self.canvas = tk.Canvas(self.main_frame, width=window_size, height=window_size, bg="#1E1E1E", highlightthickness=0)
+        self.canvas = tk.Canvas(self.main_frame, width=window_size, height=window_size, bg="black", highlightthickness=0)
         self.canvas.pack(pady=(8, 8))
 
-        self.draw_rounded_background()
         self.draw_glow_circle(active=False)
 
         self.bind("<Button-3>", lambda e: sys.exit())
@@ -195,24 +194,9 @@ class VoxWidget(tk.Tk):
         with open("tasks.json", "w") as file:
             json.dump(data, file, indent=4)
 
-    def draw_rounded_background(self):
-        width = self.canvas.winfo_width()
-        height = self.canvas.winfo_height()
-        radius = 25
-        bg_color = "#1E1E1E"
-
-        self.canvas.create_rectangle(0, 0, width, height, fill=bg_color, outline=bg_color)
-        self.canvas.create_oval(0, 0, radius * 2, radius * 2, fill=bg_color, outline=bg_color)
-        self.canvas.create_oval(width - radius * 2, 0, width, radius * 2, fill=bg_color, outline=bg_color)
-        self.canvas.create_oval(0, height - radius * 2, radius * 2, height, fill=bg_color, outline=bg_color)
-        self.canvas.create_oval(width - radius * 2, height - radius * 2, width, height, fill=bg_color, outline=bg_color)
-
-        self.canvas.create_rectangle(radius, 0, width - radius, height, fill=bg_color, outline=bg_color)
-        self.canvas.create_rectangle(0, radius, width, height - radius, fill=bg_color, outline=bg_color)
 
     def draw_glow_circle(self, active=False):
         self.canvas.delete("all")
-        self.draw_rounded_background()
 
         image_path = self.resource_path("assets/vox_icon_active.png") if active else self.resource_path("assets/vox_icon_inactive.png")
         image = Image.open(image_path)
