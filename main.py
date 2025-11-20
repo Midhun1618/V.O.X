@@ -23,12 +23,31 @@ import ctypes
 import pyperclip
 import pyautogui
 import spacy
-from TTS.api import TTS
 from dotenv import load_dotenv
 import torch.nn as nn
 import numpy as np
 import pickle
 import torch
+import asyncio
+import edge_tts
+
+class EdgeTTS:
+    def __init__(self, voice="en-US-AriaNeural"):
+        self.voice = voice
+
+    async def _generate(self, text, output_path):
+        tts = edge_tts.Communicate(text, self.voice)
+        await tts.save(output_path)
+
+    def speak(self, text):
+        try:
+            output_path = "output.mp3"
+            asyncio.run(self._generate(text, output_path))
+            pygame.mixer.music.load(output_path)
+            pygame.mixer.music.play()
+        except Exception as e:
+            print("TTS Error:", e)
+
 
 try:
     nlp = spacy.load("en_core_web_sm")
@@ -57,14 +76,13 @@ class VoxWidget(tk.Tk):
 
         self.nlp = spacy.load("en_core_web_sm")
 
+        self.tts = EdgeTTS(voice="en-US-AriaNeural")
 
         self.overrideredirect(True)
         self.attributes("-topmost", True)
         self.attributes("-transparentcolor", "black")
         self.configure(bg="black")
         self.attributes("-alpha", 1.0)
-
-        self.tts = TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC")
 
         self.bind("<Button-1>", self.start_move)
         self.bind("<B1-Motion>", self.move_window)
@@ -98,13 +116,7 @@ class VoxWidget(tk.Tk):
         self.speak("Hi, i am vox, your own personal assistant")
         
     def speak(self, text):
-        try:
-            output_path = "output.wav"
-            self.tts.tts_to_file(text=text, file_path=output_path,speed=1.8)
-            pygame.mixer.music.load(output_path)
-            pygame.mixer.music.play()
-        except Exception as e:
-            print("TTS Error:", e)
+        self.tts.speak(text)
 
     def clean_query(self, command):
         command = command.lower()
