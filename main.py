@@ -26,8 +26,6 @@ import spacy
 from dotenv import load_dotenv
 import torch.nn as nn
 import numpy as np
-import pickle
-import torch
 import asyncio
 import edge_tts
 
