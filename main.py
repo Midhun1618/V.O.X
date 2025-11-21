@@ -22,7 +22,6 @@ import sounddevice as sd
 import ctypes
 import pyperclip
 import pyautogui
-import spacy
 from dotenv import load_dotenv
 import torch.nn as nn
 import numpy as np
@@ -45,13 +44,6 @@ class EdgeTTS:
             pygame.mixer.music.play()
         except Exception as e:
             print("TTS Error:", e)
-
-
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    subprocess.check_call([sys.executable, "-m", "spacy", "download", "en_core_web_sm"])
-    nlp = spacy.load("en_core_web_sm")
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -118,14 +110,12 @@ class VoxWidget(tk.Tk):
 
     def clean_query(self, command):
         command = command.lower()
-
         fillers = [
             "transcript:", "transcript", 
             "what is", "who is", "define", 
             "explain", "tell me about", 
             "describe", "what are", "where is"
         ]
-
         for f in fillers:
             if f in command:
                 command = command.replace(f, "")
@@ -134,7 +124,6 @@ class VoxWidget(tk.Tk):
         print(command)
         
         return command.title()
-
 
     def wiki_search(self, query):
         url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + query.replace(" ", "_")
@@ -151,7 +140,6 @@ class VoxWidget(tk.Tk):
             return data.get("extract")
         else:
             return None
-
 
     def resource_path(self, relative_path):
         try:
@@ -278,12 +266,10 @@ class VoxWidget(tk.Tk):
                 text = self.recognizer.recognize_google(audio)
                 self.after(0, self.update_transcript, text)
                 command = text.lower()
-                doc = self.nlp(command)
 
                 QUESTION_WORDS = ["what", "who", "when", "where", "why", "how","tell me about"]
 
-                if any(token.lemma_ == "open" for token in doc):
-                    
+                if "open" in command:
                     if "notepad" in command:
                         subprocess.Popen("notepad.exe")
                         self.success_sfx()
@@ -322,12 +308,7 @@ class VoxWidget(tk.Tk):
                     else:
                         self.speak("What do you want to open.")
                 elif "search" in command:
-                    doc = self.nlp(command)
                     search_terms = []
-
-                    for token in doc:
-                        if token.dep_ in ["dobj", "pobj", "attr", "conj", "nsubj", "nmod"] or token.pos_ == "NOUN":
-                            search_terms.append(token.text)
 
                     if not search_terms:
                         parts = command.split()
@@ -456,20 +437,6 @@ class VoxWidget(tk.Tk):
                 elif "exit" in command or "quit" in command:
                     self.speak("Goodbye Boss!")
                     sys.exit()
-                elif any(word in command.lower() for word in QUESTION_WORDS):
-                    for ent in doc.ents:
-                        if ent.label_ == "GPE": 
-                            location = ent.text
-                    query = self.clean_query(command)
-                    summary = self.wiki_search(query)
-                    if summary is not None:
-                        self.success_sfx()
-                        sentences = summary.split(". ")
-                        for sentence in sentences:
-                            self.speak(sentence)
-                    else:
-                        self.speak("I could not find any information on that.")
-                    
                 elif "need assistance" in command or "open chat gpt" in command:
                     webbrowser.open("https://chatgpt.com")
                     self.success_sfx()
@@ -546,25 +513,28 @@ class VoxWidget(tk.Tk):
                              self.speak(task)
                     else:
                          self.speak("You don't have any tasks right now.")
-                elif "help me" in command or "can you help" in command:
-                    self.speak("Ofcourse, how can i help you?")
-                    self.listening_for_command = True
-                    self.after(0, self.update_transcript, "Help: Listening for command")
-                    self.glow_listen(True)
-                    self.listen_for_command()
-                    self.listening_for_command = False
-                    self.after(0, self.update_transcript, "Waiting for wake word 'VOX'...")
-                    self.glow_listen(False)
+                
 
                 else:
-                    no_response_phrases = [
-                        "Sorry, I didn't catch that.",
-                        "Can you say that again?",
-                        "Didn't get that clearly, could you repeat?",
-                        "Please repeat that.",
-                        "Hmm, not sure what you meant."
-                    ]
-                    self.speak(random.choice(no_response_phrases))
+                    if any(word in command.lower() for word in QUESTION_WORDS):
+                        query = self.clean_query(command)
+                        summary = self.wiki_search(query)
+                        if summary is not None:
+                            self.success_sfx()
+                            sentences = summary.split(". ")
+                            for sentence in sentences:
+                                self.speak(sentence)
+                        else:
+                            self.speak("I could not find any information on that.")
+                    else:
+                        no_response_phrases = [
+                            "Sorry, I didn't catch that.",
+                            "Can you say that again?",
+                            "Didn't get that clearly, could you repeat?",
+                            "Please repeat that.",
+                            "Hmm, not sure what you meant."
+                        ]
+                        self.speak(random.choice(no_response_phrases))
 
         except sr.WaitTimeoutError:
             self.after(0, self.update_transcript, "Listening timed out, try again.")
