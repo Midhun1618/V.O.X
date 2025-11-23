@@ -55,16 +55,22 @@ GCS_API_KEY = os.getenv("GCS_API_KEY")
 GCS_CX = os.getenv("GCS_CX")
 
 class VoxWidget(tk.Tk):
+    def resource_path(self, relative_path):
+        try:
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+        return os.path.join(base_path, relative_path)
+
     def __init__(self):
         super().__init__()
 
         pygame.mixer.init()
         self.update_idletasks()
 
-        self.iconbitmap("vox_icon.ico")
+        icon_path = resource_path("vox_icon.ico")
+        self.root.iconbitmap(icon_path)
         self.title("VOX")
-
-        self.nlp = spacy.load("en_core_web_sm")
 
         self.tts = EdgeTTS(voice="en-US-AriaNeural")
 
@@ -140,13 +146,6 @@ class VoxWidget(tk.Tk):
             return data.get("extract")
         else:
             return None
-
-    def resource_path(self, relative_path):
-        try:
-            base_path = sys._MEIPASS
-        except Exception:
-            base_path = os.path.abspath(".")
-        return os.path.join(base_path, relative_path)
 
     def open_control_panel(self):
         os.system("control")
