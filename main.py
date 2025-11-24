@@ -69,12 +69,10 @@ class VoxWidget(tk.Tk):
 
             if info["maxInputChannels"] > 0:
                 if "mic" in info["name"].lower() or "microphone" in info["name"].lower():
-                    print("[+] Selected Microphone:", info["name"], "(Index", i, ")")
                     best_index = i
                     break
 
         if best_index is None:
-            print("[!] No explicit microphone found. Using default input 0.")
             best_index = pa.get_default_input_device_info()["index"]
 
         return best_index
@@ -344,6 +342,7 @@ class VoxWidget(tk.Tk):
                         self.speak("Opening Google")
                     else:
                         self.speak("What do you want to open.")
+                        self.glow_listen(False)
                 elif "search" in command:
                     search_terms = []
 
