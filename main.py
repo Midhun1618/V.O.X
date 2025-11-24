@@ -18,7 +18,6 @@ import datetime
 import time
 import requests
 from datetime import datetime
-import sounddevice as sd
 import ctypes
 import pyperclip
 import pyautogui
@@ -27,6 +26,7 @@ import torch.nn as nn
 import numpy as np
 import asyncio
 import edge_tts
+import pyaudio
 
 class EdgeTTS:
     def __init__(self, voice="en-US-AriaNeural"):
@@ -47,20 +47,37 @@ class EdgeTTS:
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
-sd.default.device = (1, None)
 
 load_dotenv()
 ACCESS_KEY = "l4YcMaXwFVLjkElTdruR5vz2fjZ3Vwd0CuGnfDR/lg0ifYd/iQzgmA=="
-GCS_API_KEY = os.getenv("GCS_API_KEY")
-GCS_CX = os.getenv("GCS_CX")
 
 class VoxWidget(tk.Tk):
+
     def resource_path(self, relative_path):
         try:
             base_path = sys._MEIPASS
         except Exception:
             base_path = os.path.abspath(".")
         return os.path.join(base_path, relative_path)
+    
+    def get_microphone_index(self):
+        pa = pyaudio.PyAudio()
+        best_index = None
+
+        for i in range(pa.get_device_count()):
+            info = pa.get_device_info_by_index(i)
+
+            if info["maxInputChannels"] > 0:
+                if "mic" in info["name"].lower() or "microphone" in info["name"].lower():
+                    print("[+] Selected Microphone:", info["name"], "(Index", i, ")")
+                    best_index = i
+                    break
+
+        if best_index is None:
+            print("[!] No explicit microphone found. Using default input 0.")
+            best_index = pa.get_default_input_device_info()["index"]
+
+        return best_index
 
     def __init__(self):
         super().__init__()
@@ -68,8 +85,12 @@ class VoxWidget(tk.Tk):
         pygame.mixer.init()
         self.update_idletasks()
 
-        icon_path = resource_path("vox_icon.ico")
-        self.root.iconbitmap(icon_path)
+        icon_path = self.resource_path("assets/vox_icon.ico")
+        try:
+            self.iconbitmap(icon_path)
+        except:
+            print("Icon load failed:", icon_path)
+
         self.title("VOX")
 
         self.tts = EdgeTTS(voice="en-US-AriaNeural")
@@ -96,8 +117,6 @@ class VoxWidget(tk.Tk):
         self.canvas = tk.Canvas(self.main_frame, width=window_size, height=window_size, bg="black", highlightthickness=0)
         self.canvas.pack(pady=(8, 8))
 
-        self.draw_glow_circle(active=False)
-
         self.bind("<Button-3>", lambda e: sys.exit())
 
         self.recognizer = sr.Recognizer()
@@ -109,7 +128,7 @@ class VoxWidget(tk.Tk):
         self.listening_for_command = False
         self.porcupine_thread = threading.Thread(target=self.wake_word_listener, daemon=True)
         self.porcupine_thread.start()
-        self.speak("Hi, i am vox, your own personal assistant")
+        self.speak("Hi, i am vox, your own personal assistant.")
         
     def speak(self, text):
         self.tts.speak(text)
@@ -229,36 +248,55 @@ class VoxWidget(tk.Tk):
     def wake_word_listener(self):
         try:
             keyword_path = self.resource_path("assets/vox.ppn")
-            self.porcupine = pvporcupine.create(access_key=ACCESS_KEY, keyword_paths=[keyword_path])
+
+            self.porcupine = pvporcupine.create(
+                access_key=ACCESS_KEY,
+                keyword_paths=[keyword_path]
+            )
+
+            self.device_index = self.get_microphone_index()
+
             self.pa = pyaudio.PyAudio()
+            device_info = self.pa.get_device_info_by_index(self.device_index)
+            print("Using Device:", device_info)
+
             self.stream = self.pa.open(
                 rate=self.porcupine.sample_rate,
                 channels=1,
                 format=pyaudio.paInt16,
                 input=True,
+                input_device_index=self.device_index,
                 frames_per_buffer=self.porcupine.frame_length
             )
+
+            print("[VOX] Wake word engine active...")
+
             while True:
-                pcm = self.stream.read(self.porcupine.frame_length, exception_on_overflow=False)
-                pcm_unpacked = struct.unpack_from("h" * self.porcupine.frame_length, pcm)
+                pcm = self.stream.read(
+                    self.porcupine.frame_length,
+                    exception_on_overflow=False
+                )
+
+                pcm_unpacked = struct.unpack_from(
+                    "h" * self.porcupine.frame_length, pcm
+                )
+
                 result = self.porcupine.process(pcm_unpacked)
-                if result >= 0 and not self.listening_for_command:
-                    waketone_path = self.resource_path("assets/waketone.wav")
-                    pygame.mixer.music.load(waketone_path)
-                    pygame.mixer.music.play()
-                    self.listening_for_command = True
-                    self.after(0, self.update_transcript, "Wake word detected! Listening for command...")
+
+                if result >= 0:
                     self.glow_listen(True)
-                    self.listen_for_command()
-                    self.listening_for_command = False
-                    self.after(0, self.update_transcript, "Waiting for wake word 'VOX'...")
-                    self.glow_listen(False)
+                    print("[VOX] Wake word detected!")
+                    pygame.mixer.music.load(self.resource_path("assets/waketone.wav"))
+                    pygame.mixer.music.play()
+                    threading.Thread(target=self.listen_for_command, daemon=True).start()
+
         except Exception as e:
-            print(f"Wake word error: {e}")
+            print("Wake word error:", e)
+
 
     def listen_for_command(self):
         try:
-            with sr.Microphone() as source: 
+            with sr.Microphone(self.device_index) as source:
                 self.recognizer.adjust_for_ambient_noise(source, duration=1)
                 audio = self.recognizer.listen(source, timeout=5, phrase_time_limit=5)
 
@@ -432,7 +470,6 @@ class VoxWidget(tk.Tk):
                     pyautogui.hotkey('ctrl', 's')
                     self.success_sfx()
                     self.speak("Saved")
-                    
                 elif "exit" in command or "quit" in command:
                     self.speak("Goodbye Boss!")
                     sys.exit()
@@ -534,6 +571,7 @@ class VoxWidget(tk.Tk):
                             "Hmm, not sure what you meant."
                         ]
                         self.speak(random.choice(no_response_phrases))
+                        self.glow_listen(False)
 
         except sr.WaitTimeoutError:
             self.after(0, self.update_transcript, "Listening timed out, try again.")
@@ -552,6 +590,7 @@ class VoxWidget(tk.Tk):
             sfx_path = self.resource_path("assets/ontrue.wav")
             pygame.mixer.music.load(sfx_path)
             pygame.mixer.music.play()
+            self.glow_listen(False)
         except Exception as e:
             print("Error playing sound effects:", e)
     def failure_sfx(self):
@@ -559,6 +598,7 @@ class VoxWidget(tk.Tk):
             sfx_path = self.resource_path("assets/onfalse.wav")
             pygame.mixer.music.load(sfx_path)
             pygame.mixer.music.play()
+            self.glow_listen(False)
         except Exception as e:
             print("Error playing sound effects:", e)
 
