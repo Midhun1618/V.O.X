@@ -136,7 +136,7 @@ class VoxWidget(tk.Tk):
         fillers = [
             "transcript:", "transcript", 
             "what is", "who is", "define", 
-            "explain", "tell me about","who are" ,"tell me"
+            "explain", "tell me about","who are" ,"tell me",
             "describe", "what are", "where is"
         ]
         for f in fillers:
@@ -591,7 +591,7 @@ class VoxWidget(tk.Tk):
             pygame.mixer.music.play()
             self.glow_listen(False)
         except Exception as e:
-            print("Error playing sound effects:", e)
+            print("Error playing success sound effects:", e)
     def failure_sfx(self):
         try:
             sfx_path = self.resource_path("assets/onfalse.wav")
@@ -599,7 +599,7 @@ class VoxWidget(tk.Tk):
             pygame.mixer.music.play()
             self.glow_listen(False)
         except Exception as e:
-            print("Error playing sound effects:", e)
+            print("Error playing failure sound effects:", e)
 
     def update_transcript(self, text):
         print("Transcript:", text)
