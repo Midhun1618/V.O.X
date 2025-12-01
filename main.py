@@ -136,7 +136,7 @@ class VoxWidget(tk.Tk):
         fillers = [
             "transcript:", "transcript", 
             "what is", "who is", "define", 
-            "explain", "tell me about", 
+            "explain", "tell me about","who are" ,"tell me"
             "describe", "what are", "where is"
         ]
         for f in fillers:
@@ -392,7 +392,7 @@ class VoxWidget(tk.Tk):
                     os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
                     self.success_sfx()
                     self.speak("Going to sleep mode")
-                
+            
                     self.success_sfx()
                 elif "what's the weather" in command or "weather" in command:
                     self.get_weather()
