@@ -27,7 +27,6 @@ import numpy as np
 import asyncio
 import edge_tts
 import pyaudio
-
 import asyncio
 import threading
 import uuid
@@ -41,11 +40,9 @@ class HybridTTS:
     def __init__(self, voice="en-US-AriaNeural"):
         self.voice = voice
 
-        # init pygame mixer
         if not pygame.mixer.get_init():
             pygame.mixer.init()
 
-        # init offline TTS engine (fallback)
         self.fallback_engine = pyttsx3.init()
         self.fallback_engine.setProperty("rate", 175)
         self.fallback_engine.setProperty("volume", 1.0)
@@ -69,7 +66,6 @@ class HybridTTS:
         file_path = f"tts_{uuid.uuid4().hex}.mp3"
 
         def run():
-            # --- Step 1: Try Edge-TTS ---
             edge_success = False
             try:
                 loop = asyncio.new_event_loop()
@@ -77,13 +73,11 @@ class HybridTTS:
                 loop.run_until_complete(self._generate_edge_tts(text, file_path))
                 loop.close()
             except:
-                pass  # We do NOT fallback here; fallback only after checking file
+                pass
 
-            # --- Step 2: Check if Edge-TTS generated valid audio ---
             if os.path.exists(file_path) and os.path.getsize(file_path) > 200:
                 edge_success = True
 
-            # --- Step 3: If Edge-TTS succeeded, try to play it ---
             if edge_success:
                 try:
                     pygame.mixer.music.load(file_path)
@@ -92,7 +86,6 @@ class HybridTTS:
                 except:
                     self._fallback_pytts(text)
             else:
-                # --- Step 4: Use pyttsx3 fallback ---
                 self._fallback_pytts(text)
 
         threading.Thread(target=run, daemon=True).start()
@@ -103,7 +96,6 @@ class HybridTTS:
         if not pygame.mixer.get_init():
             pygame.mixer.init()
 
-        # Offline fallback engine
         self.fallback_engine = pyttsx3.init()
         self.fallback_engine.setProperty("rate", 175)
         self.fallback_engine.setProperty("volume", 1.0)
@@ -127,7 +119,6 @@ class HybridTTS:
         file_path = f"tts_{uuid.uuid4().hex}.mp3"
 
         def run():
-            # Step 1 — generate using Edge-TTS
             success = False
             try:
                 loop = asyncio.new_event_loop()
@@ -135,13 +126,11 @@ class HybridTTS:
                 loop.run_until_complete(self._generate_async(text, file_path))
                 loop.close()
             except:
-                pass  # don't fallback here; fallback only after checking file
+                pass  
 
-            # Step 2 — check if file actually generated correctly
             if os.path.exists(file_path) and os.path.getsize(file_path) > 200:
                 success = True
 
-            # Step 3 — Play Edge-TTS if success
             if success:
                 try:
                     pygame.mixer.music.load(file_path)
@@ -150,7 +139,6 @@ class HybridTTS:
                 except:
                     self._fallback(text)
             else:
-                # Step 4 — Fallback pyttsx3
                 self._fallback(text)
 
         threading.Thread(target=run, daemon=True).start()
@@ -186,6 +174,7 @@ class VoxWidget(tk.Tk):
             best_index = pa.get_default_input_device_info()["index"]
 
         return best_index
+    
     def speak(self, text):
         self.tts.speak(text)
 
@@ -240,8 +229,6 @@ class VoxWidget(tk.Tk):
         self.porcupine_thread.start()
 
         self.after(1200, lambda: self.speak("Hi, I am Vox, your personal assistant."))
-
-        
 
     def clean_query(self, command):
         command = command.lower()
@@ -300,7 +287,6 @@ class VoxWidget(tk.Tk):
         if(m=="PM")and((hour>8)and(hour<12)):
             return ("night")
 
-
     def get_weather(self):
         try:
             response = requests.get("https://wttr.in/Kochi?format=3")
@@ -319,7 +305,6 @@ class VoxWidget(tk.Tk):
     def save_tasks(self, data):
         with open("tasks.json", "w") as file:
             json.dump(data, file, indent=4)
-
 
     def create_icon(self, active=False):
         self.canvas.delete("all")
@@ -399,7 +384,6 @@ class VoxWidget(tk.Tk):
 
         except Exception as e:
             print("Wake word error:", e)
-
 
     def listen_for_command(self):
         try:
@@ -701,6 +685,7 @@ class VoxWidget(tk.Tk):
             self.glow_listen(False)
         except Exception as e:
             print("Error playing success sound effects:", e)
+
     def failure_sfx(self):
         try:
             sfx_path = self.resource_path("assets/onfalse.wav")
