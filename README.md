@@ -52,7 +52,7 @@ python main.py
 <h2>Example Commands</h2>
 <ul>
   <li>Hey Vox, open YouTube</li>
-  <li>Hey Vox, search Python multithreading</li>
+  <li>Hey Vox, what is Python multithreading</li>
   <li>Hey Vox, add task buy groceries</li>
   <li>Hey Vox, read my tasks</li>
   <li>Hey Vox, mute volume</li>
