@@ -1,8 +1,8 @@
 <h1>VOX – Desktop Voice Assistant</h1>
 VOX is a Python-based desktop voice assistant that enables hands-free system interaction using a custom wake word. It supports real-time voice commands, system automation, and natural voice responses through a lightweight floating widget interface.
 
-Features
-Wake-word detection using Picovoice Porcupine (“Hey Vox”)
+<h2>Features</h2>
+Wake-word detection using Picovoice Porcupine (“Hey Vox”)\n
 Real-time speech recognition
 Hybrid text-to-speech
 Online: Edge TTS
@@ -18,7 +18,7 @@ Contextual responses (time, weather, greetings)
 Audio feedback for command success/failure
 Multithreaded and async execution for smooth performance
 
-<b>Tech Stack</b>
+<h2>Tech Stack</h2>
 Language: Python
 UI: CustomTkinter, Tkinter
 Wake Word: Picovoice Porcupine
@@ -28,7 +28,7 @@ Audio: PyAudio, Pygame
 Automation: PyAutoGUI, ctypes
 Storage: JSON
 
-Installation
+<h2>Installation</h2>
 git clone https://github.com/Midhun1618/VOX.git
 cd VOX
 pip install -r requirements.txt
@@ -39,14 +39,14 @@ Note: PyAudio may require a pre-built wheel on Windows.
 Run
 python main.py
 
-Example Commands :
+<h2>Example Commands :</h2>
 “Hey Vox, open YouTube”
 “Hey Vox, search Python multithreading”
 “Hey Vox, add task buy groceries”
 “Hey Vox, read my tasks”
 “Hey Vox, mute volume”
 
-Project Structure
+<h2>Project Structure</h2>
 VOX/
 ├── assets/
 ├── main.py
