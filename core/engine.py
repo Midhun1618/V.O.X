@@ -25,12 +25,14 @@ class VoxEngine:
     def on_wake_word(self):
         print("[Engine] Wake word received")
 
-        if self.ui:
-            self.ui.after(0, self.ui.show_listening)
-
+        pygame.mixer.init()
         self.wake_sound = pygame.mixer.Sound(
             os.path.join("assets", "waketone.wav")
         )
+        self.wake_sound.play()
+
+        if self.ui:
+            self.ui.after(0, self.ui.show_listening)        
 
         self.listen_for_command()
 
