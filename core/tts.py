@@ -30,7 +30,7 @@ class TTS:
         if not text.strip():
             return
 
-        file_path = f"tts_{uuid.uuid4().hex}.mp3"
+        file_path = f"offline_tts_output.mp3"
 
         def run():
             success = False

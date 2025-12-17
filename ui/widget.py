@@ -16,7 +16,7 @@ class VoxWidget(ctk.CTk):
     def _draw_icon(self, path):
         self.canvas.delete("all")
 
-        img = Image.open(path).resize((60, 60), Image.Resampling.LANCZOS)
+        img = Image.open(path).resize((40, 40), Image.Resampling.LANCZOS)
         self._icon_img = ImageTk.PhotoImage(img)
 
         self.canvas.create_image(
