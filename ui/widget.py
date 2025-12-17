@@ -12,6 +12,18 @@ class VoxWidget(ctk.CTk):
         self._setup_ui()
         self._bind_events()
 
+
+    def _draw_icon(self, path):
+        self.canvas.delete("all")
+
+        img = Image.open(path).resize((60, 60), Image.Resampling.LANCZOS)
+        self._icon_img = ImageTk.PhotoImage(img)
+
+        self.canvas.create_image(
+            32, 32,
+            image=self._icon_img
+        )
+
     def _setup_window(self):
         icon_path = ("assets/vox_icon.ico")
         self.iconbitmap(icon_path)
@@ -46,10 +58,10 @@ class VoxWidget(ctk.CTk):
         self.bind("<Button-3>", lambda e: sys.exit())
 
     def show_idle(self):
-        self.canvas.delete("all")
+        self._draw_icon("assets/vox_icon_inactive.png")
 
     def show_listening(self):
-        self.canvas.delete("all")
+        self._draw_icon("assets/vox_icon_active.png")
 
     def _start_move(self, event):
         self._x = event.x
