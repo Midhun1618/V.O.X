@@ -17,11 +17,47 @@ class VoxEngine:
         self.web_skill = WebSkill(self)
 
         self.router.register(
+            intent="OPEN_GMAIL",
+            keywords=["mail", "gmail", "open mail"],
+            handler=self.web_skill.open_gmail
+        )
+
+        self.router.register(
             intent="OPEN_YOUTUBE",
-            keywords=["open youtube", "youtube"],
+            keywords=["youtube", "open youtube"],
             handler=self.web_skill.open_youtube
         )
-        
+
+        self.router.register(
+            intent="OPEN_GITHUB",
+            keywords=["github", "open github"],
+            handler=self.web_skill.open_github
+        )
+
+        self.router.register(
+            intent="OPEN_SPOTIFY",
+            keywords=["spotify", "open spotify"],
+            handler=self.web_skill.open_spotify
+        )
+
+        self.router.register(
+            intent="OPEN_GOOGLE",
+            keywords=["google", "open google"],
+            handler=self.web_skill.open_google
+        )
+
+        self.router.register(
+            intent="SEARCH_GOOGLE",
+            keywords=["search"],
+            handler=self.web_skill.search_google
+        )
+
+        self.router.register(
+            intent="SEARCH_YOUTUBE",
+            keywords=["youtube search", "search youtube"],
+            handler=self.web_skill.search_youtube
+        )
+
         self.tts = TTS()
         self.listener = Listener()
         self.wakeword = WakeWord(
