@@ -6,6 +6,7 @@ def main():
     print("Started")
     ui = VoxWidget(engine)
     engine.start()
+    engine.startup()
 
     engine.attach_ui(ui)
     ui.mainloop()

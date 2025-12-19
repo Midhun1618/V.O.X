@@ -6,6 +6,7 @@ class Listener:
         self.device_index = device_index
 
     def listen(self, timeout=5, phrase_time_limit=5):
+        print("[core] Listener : listen")
         try:
             with sr.Microphone(device_index=self.device_index) as source:
                 self.recognizer.adjust_for_ambient_noise(source, duration=0.5)

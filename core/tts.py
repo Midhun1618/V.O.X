@@ -13,7 +13,7 @@ class TTS:
         if not pygame.mixer.get_init():
             pygame.mixer.init()
 
-        self.fallback = pyttsx3.init()
+        self.fallback = pyttsx3.init(driverName="sapi5")
         self.fallback.setProperty("rate", 175)
         self.fallback.setProperty("volume", 1.0)
 
@@ -22,7 +22,7 @@ class TTS:
         await tts.save(path)
 
     def _fallback_speak(self, text):
-        print("⚠ Using fallback TTS")
+        print("[TTS ERROR] Using fallback TTS")
         self.fallback.say(text)
         self.fallback.runAndWait()
 
