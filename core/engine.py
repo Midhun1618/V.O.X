@@ -16,48 +16,6 @@ class VoxEngine:
         self.router = Router()
         self.web_skill = WebSkill(self)
 
-        self.router.register(
-            intent="OPEN_GMAIL",
-            keywords=["mail", "gmail", "open mail"],
-            handler=self.web_skill.open_gmail
-        )
-
-        self.router.register(
-            intent="OPEN_YOUTUBE",
-            keywords=["youtube", "open youtube"],
-            handler=self.web_skill.open_youtube
-        )
-
-        self.router.register(
-            intent="OPEN_GITHUB",
-            keywords=["github", "open github"],
-            handler=self.web_skill.open_github
-        )
-
-        self.router.register(
-            intent="OPEN_SPOTIFY",
-            keywords=["spotify", "open spotify"],
-            handler=self.web_skill.open_spotify
-        )
-
-        self.router.register(
-            intent="OPEN_GOOGLE",
-            keywords=["google", "open google"],
-            handler=self.web_skill.open_google
-        )
-
-        self.router.register(
-            intent="SEARCH_GOOGLE",
-            keywords=["search"],
-            handler=self.web_skill.search_google
-        )
-
-        self.router.register(
-            intent="SEARCH_YOUTUBE",
-            keywords=["youtube search", "search youtube"],
-            handler=self.web_skill.search_youtube
-        )
-
         self.tts = TTS()
         self.listener = Listener()
         self.wakeword = WakeWord(
@@ -75,6 +33,17 @@ class VoxEngine:
         self.onfalse = pygame.mixer.Sound(
             os.path.join("assets", "onfalse.wav")
         )
+
+        web_intents = [
+            ("OPEN_GMAIL",   ["mail", "gmail", "open mail"],   self.web_skill.open_gmail),
+            ("OPEN_YOUTUBE", ["youtube", "open youtube"],      self.web_skill.open_youtube),
+            ("OPEN_GITHUB",  ["github", "open github"],        self.web_skill.open_github),
+            ("OPEN_SPOTIFY", ["spotify", "open spotify"],      self.web_skill.open_spotify),
+            ("OPEN_GOOGLE",  ["google", "open google"],        self.web_skill.open_google),
+        ]
+
+        for intent, keywords, handler in web_intents:
+            self.router.register(intent, keywords, handler)
     
     def start(self):
         self.wakeword.start()
