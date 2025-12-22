@@ -6,7 +6,7 @@ from skills.web import WebSkill
 from skills.system import SystemSkill
 from skills.time import TimeSkill
 from skills.weather import WeatherSkill
-
+from core.events import EventBus
 import os
 import threading
 import pygame
@@ -17,6 +17,7 @@ class VoxEngine:
     def __init__(self):
         keyword_path = os.path.join("assets", "vox.ppn")
         
+        self.events = EventBus()
         self.router = Router()
         self.web_skill = WebSkill(self)
         self.system_skill = SystemSkill(self)
@@ -30,16 +31,15 @@ class VoxEngine:
             keyword_path=keyword_path,
             on_detected=self.on_wake_word
         )
+        
         pygame.mixer.init()
-        self.wake_sound = pygame.mixer.Sound(
-            os.path.join("assets", "waketone.wav")
-        )
-        self.ontrue = pygame.mixer.Sound(
-            os.path.join("assets", "ontrue.wav")
-        )
-        self.onfalse = pygame.mixer.Sound(
-            os.path.join("assets", "onfalse.wav")
-        )
+        self.wake_sound = pygame.mixer.Sound(os.path.join("assets", "waketone.wav"))
+        self.ontrue = pygame.mixer.Sound(os.path.join("assets", "ontrue.wav"))
+        self.onfalse = pygame.mixer.Sound(os.path.join("assets", "onfalse.wav"))
+
+        self.events.on("wake_detected", lambda: self.wake_sound.play())
+        self.events.on("speech_failed", lambda: self.tts.speak("I didn't catch that"))
+        self.events.on("intent_unknown", lambda text=None: self.tts.speak("I don't know how to do that yet"))
 
         web_intents = [
             ("OPEN_GMAIL",   ["mail", "gmail", "open mail"], self.web_skill.open_gmail),
@@ -67,7 +67,7 @@ class VoxEngine:
             ("EXIT", ["exit", "quit"], self.system_skill.exit_app),
         ]
         time_weather_intents = [
-            ("TIME_NOW",["time","time right now"],self.time_skill.tell_time)
+            ("TIME_NOW",["time","time right now"],self.time_skill.tell_time),
             ("WEATHER",["weather","weather today"],self.weather_skill.get_weather)
         ]
 
@@ -75,36 +75,34 @@ class VoxEngine:
             self.router.register(intent, keywords, handler)
     
     def start(self):
-        self.wakeword.start()
+        self.wakeword.start()       
 
     def on_wake_word(self):
-        self.wake_sound.play()
         print("[Engine] Wake word received")
-        
-        if self.ui:
-            self.ui.after(0, self.ui.show_listening)        
+        self.events.emit("wake_detected")
         self.listen_for_command()
 
     def listen_for_command(self):
         def run():
+            self.events.emit("listening_started")
             text = self.listener.listen()
-            print("[User]",text)
-            if self.ui:
-                self.ui.after(0, self.ui.show_idle)
+            self.events.emit("listening_finished")
 
             if not text:
-                print("[Engine] No speech detected")
-                self.onfalse.play()
+                self.events.emit("speech_failed")
                 return
 
-            handler,cleaned_text = self.router.route(text)
+            self.events.emit("speech_recognized", text=text)
+
+            handler, cleaned_text = self.router.route(text)
+
             if handler:
+                self.events.emit("intent_matched", text=cleaned_text)
                 handler(cleaned_text)
             else:
-                self.tts.speak("I didn't catch that")
+                self.events.emit("intent_unknown", text=text)
 
         threading.Thread(target=run, daemon=True).start()
-
 
     def speak(self, text):
         self.tts.speak(text)
@@ -114,7 +112,7 @@ class VoxEngine:
 
     def attach_ui(self, ui):
         self.ui = ui
-        
+
     def on_listening(self):
         if self.ui:
             self.ui.show_listening()

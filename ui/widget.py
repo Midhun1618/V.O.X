@@ -1,3 +1,4 @@
+from core.events import EventBus
 import customtkinter as ctk
 import tkinter as tk
 from PIL import Image, ImageTk
@@ -8,6 +9,8 @@ class VoxWidget(ctk.CTk):
         super().__init__()
         self.engine = engine
 
+        self.engine.events.on("wake_detected", self.show_listening)
+        self.engine.events.on("listening_finished", self.show_idle)
         self._setup_window()
         self._setup_ui()
         self._bind_events()
